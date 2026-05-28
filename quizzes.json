@@ -1,0 +1,37 @@
+{
+  "default": {
+    "title": "상식 퀴즈",
+    "questions": [
+      {
+        "q": "대한민국의 수도는?",
+        "choices": ["부산", "서울", "인천", "대구"],
+        "answer": 1,
+        "timeLimit": 5
+      },
+      {
+        "q": "Node.js는 어떤 언어 런타임인가요?",
+        "choices": ["Python", "Java", "JavaScript", "Ruby"],
+        "answer": 2,
+        "timeLimit": 5
+      },
+      {
+        "q": "다음 중 NoSQL DB가 아닌 것은?",
+        "choices": ["MongoDB", "Redis", "PostgreSQL", "DynamoDB"],
+        "answer": 2,
+        "timeLimit": 5
+      },
+      {
+        "q": "WebSocket의 기본 포트는?",
+        "choices": ["80 / 443", "21", "22", "3306"],
+        "answer": 0,
+        "timeLimit": 5
+      },
+      {
+        "q": "1 + 1 = ?",
+        "choices": ["1", "2", "3", "11"],
+        "answer": 1,
+        "timeLimit": 5
+      }
+    ]
+  }
+}

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>호스트 - QuizN Clone</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:-apple-system, BlinkMacSystemFont, sans-serif; background:#1e1b4b; color:#fff; margin:0; min-height:100vh; padding:24px; }
+  .container { max-width:1100px; margin:0 auto; }
+  h1, h2, h3 { margin:0; }
+
+  /* === Setup === */
+  #setup { text-align:center; padding-top:80px; }
+  #setup h1 { font-size:48px; margin-bottom:32px; }
+  #setup button { background:#fbbf24; color:#1e1b4b; border:none; padding:24px 64px; font-size:24px; font-weight:800; border-radius:12px; cursor:pointer; }
+
+  /* === Lobby === */
+  .pin-box { background:#fff; color:#1e1b4b; padding:32px; border-radius:16px; text-align:center; margin-bottom:24px; }
+  .pin { font-size:88px; font-weight:900; letter-spacing:12px; margin:8px 0; }
+  .label { color:#666; font-size:14px; }
+  .players { background:rgba(255,255,255,.1); padding:24px; border-radius:12px; margin-bottom:24px; min-height:120px; }
+  .player-chip { display:inline-block; background:#fff; color:#1e1b4b; padding:10px 18px; margin:4px; border-radius:24px; font-weight:700; }
+  .start-btn { width:100%; background:#fbbf24; color:#1e1b4b; border:none; padding:20px; font-size:22px; font-weight:800; border-radius:12px; cursor:pointer; }
+  .start-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  /* === Question === */
+  .q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .q-progress { font-size:18px; opacity:.7; }
+  .timer { font-size:64px; font-weight:900; color:#fbbf24; }
+  .timer.warning { color:#ef4444; animation:pulse .5s infinite; }
+  @keyframes pulse { 50% { transform:scale(1.1); } }
+  .q-text { background:#fff; color:#1e1b4b; padding:48px; border-radius:16px; font-size:36px; font-weight:700; text-align:center; margin-bottom:24px; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .choice { padding:28px; border-radius:12px; color:#fff; font-weight:700; font-size:22px; }
+  .choice.c0 { background:#ef4444; } .choice.c1 { background:#3b82f6; }
+  .choice.c2 { background:#eab308; } .choice.c3 { background:#22c55e; }
+  .progress-info { text-align:center; margin-top:24px; font-size:18px; opacity:.8; }
+
+  /* === Answer Reveal (큰 정답 표시) === */
+  .answer-reveal { text-align:center; padding-top:80px; }
+  .answer-reveal .big-label { font-size:32px; opacity:.7; margin-bottom:24px; }
+  .answer-reveal .big-answer { background:#22c55e; padding:64px; border-radius:24px; font-size:72px; font-weight:900; display:inline-block; min-width:60%; box-shadow:0 20px 60px rgba(34,197,94,.4); animation:popIn .4s; }
+  @keyframes popIn { from { transform:scale(.5); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+  /* === Ranking === */
+  .ranking-title { text-align:center; font-size:40px; font-weight:900; margin-bottom:32px; }
+  .rank-list { display:flex; flex-direction:column; gap:12px; }
+  .rank-row { display:flex; align-items:center; background:#fff; color:#1e1b4b; border-radius:12px; padding:16px 24px; gap:16px; animation:slideIn .5s ease both; }
+  @keyframes slideIn { from { transform:translateX(-30px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  .rank-num { font-size:28px; font-weight:900; min-width:48px; text-align:center; color:#6366f1; }
+  .rank-nick { font-weight:800; flex:1; }
+  .rank-score { font-weight:900; color:#6366f1; }
+  /* 점수 높을수록 글씨 크게 */
+  .rank-row.tier-1 { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+  .rank-row.tier-1 .rank-nick { font-size:42px; }
+  .rank-row.tier-1 .rank-score { font-size:36px; }
+  .rank-row.tier-2 { background:linear-gradient(90deg,#e5e7eb,#d1d5db); }
+  .rank-row.tier-2 .rank-nick { font-size:34px; }
+  .rank-row.tier-2 .rank-score { font-size:30px; }
+  .rank-row.tier-3 { background:linear-gradient(90deg,#fed7aa,#fdba74); }
+  .rank-row.tier-3 .rank-nick { font-size:28px; }
+  .rank-row.tier-3 .rank-score { font-size:26px; }
+  .rank-row.tier-4 .rank-nick { font-size:22px; }
+  .rank-row.tier-4 .rank-score { font-size:22px; }
+  .rank-row.tier-5 .rank-nick { font-size:18px; }
+  .rank-row.tier-5 .rank-score { font-size:18px; }
+
+  /* === Ended === */
+  #ended { text-align:center; }
+  #ended h1 { font-size:56px; margin-bottom:32px; }
+
+  #setup, #lobby, #playing, #answering, #ranking, #ended { display:none; }
+  .active { display:block !important; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div id="setup" class="active">
+    <h1>🎯 호스트 모드</h1>
+    <button id="createBtn">방 만들기</button>
+  </div>
+
+  <div id="lobby">
+    <div class="pin-box">
+      <div class="label">참가 PIN</div>
+      <div class="pin" id="pinDisplay">------</div>
+      <div class="label">플레이어에게 알려주세요 · /play 페이지에서 입력</div>
+    </div>
+    <div class="players">
+      <h3>참가자 (<span id="playerCount">0</span>명)</h3>
+      <div id="playerList" style="margin-top:12px;"></div>
+    </div>
+    <button id="startBtn" class="start-btn" disabled>퀴즈 시작 (이후 자동 진행)</button>
+  </div>
+
+  <div id="playing">
+    <div class="q-header">
+      <div class="q-progress" id="qProgress">문제 1 / 5</div>
+      <div class="timer" id="timer">00</div>
+    </div>
+    <div class="q-text" id="qText"></div>
+    <div class="choices" id="qChoices"></div>
+    <div class="progress-info" id="qProgressInfo"></div>
+  </div>
+
+  <div id="answering" class="answer-reveal">
+    <div class="big-label">정답</div>
+    <div class="big-answer" id="bigAnswer"></div>
+  </div>
+
+  <div id="ranking">
+    <div class="ranking-title" id="rankingTitle">🏆 현재 순위</div>
+    <div class="rank-list" id="rankList"></div>
+  </div>
+
+  <div id="ended">
+    <h1>🏆 게임 종료!</h1>
+    <div class="rank-list" id="finalRank"></div>
+  </div>
+
+</div>
+
+<script>
+const socket = io();
+const $ = id => document.getElementById(id);
+const show = id => {
+  ['setup','lobby','playing','answering','ranking','ended'].forEach(s => $(s).classList.remove('active'));
+  $(id).classList.add('active');
+};
+
+$('createBtn').onclick = async () => {
+  const res = await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+  const { pin } = await res.json();
+  socket.emit('host:join', { pin });
+};
+
+socket.on('host:joined', ({ pin, players }) => {
+  $('pinDisplay').textContent = pin;
+  renderPlayers(players);
+  show('lobby');
+});
+
+socket.on('host:players', renderPlayers);
+
+function renderPlayers(players) {
+  $('playerCount').textContent = players.length;
+  $('playerList').innerHTML = players.map(p => `<span class="player-chip">${escapeHtml(p.nick)}</span>`).join('');
+  $('startBtn').disabled = players.length === 0;
+}
+
+$('startBtn').onclick = () => {
+  socket.emit('host:start');
+};
+
+// === 문제 표시 ===
+socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
+  $('qProgress').textContent = `문제 ${index+1} / ${total}`;
+  $('qText').textContent = q;
+  $('qChoices').innerHTML = choices.map((c,i) =>
+    `<div class="choice c${i}">${i+1}. ${escapeHtml(c)}</div>`).join('');
+  $('qProgressInfo').textContent = '';
+  $('timer').textContent = String(timeLimit).padStart(2,'0');
+  $('timer').classList.remove('warning');
+  show('playing');
+});
+
+socket.on('tick', ({ remaining }) => {
+  $('timer').textContent = String(remaining).padStart(2,'0');
+  if (remaining <= 5) $('timer').classList.add('warning');
+  else $('timer').classList.remove('warning');
+});
+
+socket.on('host:progress', ({ answered, total }) => {
+  $('qProgressInfo').textContent = `답변 ${answered} / ${total}`;
+});
+
+// === 정답 공개 (큰 글씨) ===
+socket.on('answer:reveal', ({ answerText }) => {
+  $('bigAnswer').textContent = answerText;
+  show('answering');
+});
+
+// === 랭킹 화면 ===
+socket.on('ranking:show', ({ leaderboard, isLast }) => {
+  $('rankingTitle').textContent = isLast ? '🏆 최종 순위 발표' : '🏆 현재 순위';
+  renderRanking('rankList', leaderboard);
+  show('ranking');
+});
+
+socket.on('game:ended', ({ leaderboard }) => {
+  renderRanking('finalRank', leaderboard);
+  show('ended');
+});
+
+function renderRanking(containerId, board) {
+  const html = board.map((p, i) => {
+    // 점수 높은 순서 = 1~3등은 큰 tier, 그 다음은 점점 작게
+    let tier;
+    if (i === 0) tier = 1;
+    else if (i === 1) tier = 2;
+    else if (i === 2) tier = 3;
+    else if (i < 6) tier = 4;
+    else tier = 5;
+    const medal = ['🥇','🥈','🥉'][i] || (i+1)+'위';
+    return `<div class="rank-row tier-${tier}">
+      <div class="rank-num">${medal}</div>
+      <div class="rank-nick">${escapeHtml(p.nick)}</div>
+      <div class="rank-score">${p.score}점</div>
+    </div>`;
+  }).join('');
+  $(containerId).innerHTML = html;
+}
+
+socket.on('error:msg', msg => alert(msg));
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
