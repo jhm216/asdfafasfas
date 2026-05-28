@@ -1,12 +1,16 @@
 // server.js — Realtime quiz server (auto-progression, host = spectator)
 const express = require('express');
-const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const server = http.createServer(app);
+const ssl = {
+  key:  fs.readFileSync('/etc/letsencrypt/live/game.hansei.cam/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/game.hansei.cam/fullchain.pem'),
+};
+const server = https.createServer(ssl, app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -258,7 +262,7 @@ function endGame(pin) {
 
 const PORT = process.env.PORT || 443;
 server.listen(PORT, () => {
-  console.log(`✅ QuizN clone running on http://localhost:${PORT}`);
-  console.log(`   호스트:   http://localhost:${PORT}/host`);
-  console.log(`   플레이어: http://localhost:${PORT}/play`);
+  console.log(`✅ QuizN clone running on https://game.hansei.cam`);
+  console.log(`   호스트:   https://game.hansei.cam/host`);
+  console.log(`   플레이어: https://game.hansei.cam/`);
 });
