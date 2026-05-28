@@ -25,12 +25,20 @@
   .start-btn { width:100%; background:#fbbf24; color:#1e1b4b; border:none; padding:20px; font-size:22px; font-weight:800; border-radius:12px; cursor:pointer; }
   .start-btn:disabled { opacity:.4; cursor:not-allowed; }
 
+  /* === Countdown === */
+  #countdown { display:none; text-align:center; padding-top:15vh; }
+  .countdown-num { font-size:320px; font-weight:900; line-height:1; color:#fbbf24; animation:popCount .85s ease-out forwards; }
+  @keyframes popCount {
+    0%   { transform:scale(2); opacity:0; }
+    40%  { transform:scale(1); opacity:1; }
+    100% { transform:scale(.6); opacity:0; }
+  }
+
   /* === Question === */
-  .q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .q-progress { font-size:18px; opacity:.7; }
-  .timer { font-size:64px; font-weight:900; color:#fbbf24; }
-  .timer.warning { color:#ef4444; animation:pulse .5s infinite; }
-  @keyframes pulse { 50% { transform:scale(1.1); } }
+  .timer-wrap { background:rgba(255,255,255,.15); border-radius:10px; height:18px; overflow:hidden; margin-bottom:24px; }
+  .timer-fill { height:100%; background:#22c55e; border-radius:10px; width:100%; transition:width .85s linear, background .3s; }
   .q-text { background:#fff; color:#1e1b4b; padding:48px; border-radius:16px; font-size:36px; font-weight:700; text-align:center; margin-bottom:24px; }
   .choices { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .choice { padding:28px; border-radius:12px; color:#fff; font-weight:700; font-size:22px; }
@@ -71,7 +79,7 @@
   #ended { text-align:center; }
   #ended h1 { font-size:56px; margin-bottom:32px; }
 
-  #setup, #lobby, #playing, #answering, #ranking, #ended { display:none; }
+  #setup, #lobby, #countdown, #playing, #answering, #ranking, #ended { display:none; }
   .active { display:block !important; }
 </style>
 </head>
@@ -96,10 +104,16 @@
     <button id="startBtn" class="start-btn" disabled>퀴즈 시작 (이후 자동 진행)</button>
   </div>
 
+  <div id="countdown">
+    <div class="countdown-num" id="countdownNum">3</div>
+  </div>
+
   <div id="playing">
     <div class="q-header">
       <div class="q-progress" id="qProgress">문제 1 / 5</div>
-      <div class="timer" id="timer">00</div>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-fill" id="timerBar"></div>
     </div>
     <div class="q-text" id="qText"></div>
     <div class="choices" id="qChoices"></div>
@@ -127,9 +141,11 @@
 const socket = io();
 const $ = id => document.getElementById(id);
 const show = id => {
-  ['setup','lobby','playing','answering','ranking','ended'].forEach(s => $(s).classList.remove('active'));
+  ['setup','lobby','countdown','playing','answering','ranking','ended'].forEach(s => $(s).classList.remove('active'));
   $(id).classList.add('active');
 };
+
+let currentTimeLimit = 30;
 
 $('createBtn').onclick = async () => {
   const res = await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
@@ -155,23 +171,37 @@ $('startBtn').onclick = () => {
   socket.emit('host:start');
 };
 
+socket.on('countdown:tick', ({ count }) => {
+  show('countdown');
+  const el = $('countdownNum');
+  el.textContent = count;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+});
+
 // === 문제 표시 ===
 socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
+  currentTimeLimit = timeLimit;
   $('qProgress').textContent = `문제 ${index+1} / ${total}`;
   $('qText').textContent = q;
   $('qChoices').innerHTML = choices.map((c,i) =>
     `<div class="choice c${i}">${i+1}. ${escapeHtml(c)}</div>`).join('');
   $('qProgressInfo').textContent = '';
-  $('timer').textContent = String(timeLimit).padStart(2,'0');
-  $('timer').classList.remove('warning');
+  setBar(100);
   show('playing');
 });
 
 socket.on('tick', ({ remaining }) => {
-  $('timer').textContent = String(remaining).padStart(2,'0');
-  if (remaining <= 5) $('timer').classList.add('warning');
-  else $('timer').classList.remove('warning');
+  const pct = Math.max(0, (remaining / currentTimeLimit) * 100);
+  setBar(pct);
 });
+
+function setBar(pct) {
+  const color = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
+  $('timerBar').style.width = pct + '%';
+  $('timerBar').style.background = color;
+}
 
 socket.on('host:progress', ({ answered, total }) => {
   $('qProgressInfo').textContent = `답변 ${answered} / ${total}`;

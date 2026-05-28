@@ -15,11 +15,21 @@
   button.primary { width:100%; background:#6366f1; color:#fff; border:none; padding:16px; font-size:18px; font-weight:700; border-radius:8px; cursor:pointer; }
   button.primary:hover { background:#4f46e5; }
 
-  .timer-bar { display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,.2); padding:12px 16px; border-radius:8px; margin-bottom:12px; font-weight:700; }
-  .timer-num { font-size:24px; color:#fbbf24; }
-  .timer-num.warning { color:#ef4444; animation:pulse .5s infinite; }
-  @keyframes pulse { 50% { transform:scale(1.15); } }
+  /* 카운트다운 */
+  #countdown { display:none; text-align:center; padding-top:15vh; }
+  .countdown-num { font-size:220px; font-weight:900; line-height:1; animation:popCount .85s ease-out forwards; }
+  @keyframes popCount {
+    0%   { transform:scale(2); opacity:0; }
+    40%  { transform:scale(1); opacity:1; }
+    100% { transform:scale(.6); opacity:0; }
+  }
 
+  /* 진행 바 */
+  .q-info-bar { display:flex; justify-content:space-between; align-items:center; padding:8px 4px; font-weight:700; margin-bottom:8px; }
+  .timer-wrap { background:rgba(0,0,0,.25); border-radius:8px; height:14px; overflow:hidden; margin-bottom:12px; }
+  .timer-fill { height:100%; background:#22c55e; border-radius:8px; width:100%; transition:width .85s linear, background .3s; }
+
+  /* 선택지 */
   .q-text { font-size:18px; font-weight:700; margin:0 0 16px; color:#222; }
   .choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .choice-btn { padding:32px 12px; color:#fff; font-weight:800; font-size:18px; border:none; border-radius:8px; cursor:pointer; min-height:100px; word-break:keep-all; }
@@ -28,12 +38,14 @@
   .choice-btn:disabled { opacity:.3; }
   .choice-btn:active:not(:disabled) { transform:scale(.95); }
 
+  /* 결과 */
   .result-big { text-align:center; font-size:56px; font-weight:900; margin:16px 0; }
   .result-big.correct { color:#22c55e; }
   .result-big.wrong { color:#ef4444; }
   .score-display { text-align:center; font-size:48px; font-weight:900; margin:8px 0; }
   .delta-display { text-align:center; color:#666; font-weight:700; }
 
+  /* 랭킹 */
   .rank-list { display:flex; flex-direction:column; gap:8px; }
   .rank-row { display:flex; align-items:center; background:#f9fafb; border-radius:8px; padding:10px 14px; gap:10px; }
   .rank-row.me { background:#6366f1; color:#fff; transform:scale(1.05); }
@@ -48,7 +60,7 @@
   .lobby-section h3 { font-size:14px; color:#888; margin:0 0 8px; font-weight:600; }
   .player-chip { display:inline-block; background:#6366f1; color:#fff; padding:6px 14px; margin:3px; border-radius:20px; font-weight:700; font-size:14px; }
 
-  #join, #waiting, #answering, #answered, #revealing, #ranking, #finished { display:none; }
+  #join, #waiting, #countdown, #answering, #answered, #revealing, #ranking, #finished { display:none; }
   .active { display:block !important; }
 </style>
 </head>
@@ -77,10 +89,16 @@
     </div>
   </div>
 
+  <div id="countdown">
+    <div class="countdown-num" id="countdownNum">3</div>
+  </div>
+
   <div id="answering">
-    <div class="timer-bar">
+    <div class="q-info-bar">
       <span id="qNumber">문제 1</span>
-      <span>⏱ <span class="timer-num" id="timer">00</span>초</span>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-fill" id="timerBar"></div>
     </div>
     <div class="card">
       <div class="q-text" id="qTextPlayer"></div>
@@ -94,9 +112,11 @@
   </div>
 
   <div id="answered">
-    <div class="timer-bar">
+    <div class="q-info-bar">
       <span id="qNumberA">문제 1</span>
-      <span>⏱ <span class="timer-num" id="timerA">00</span>초</span>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-fill" id="timerBarA"></div>
     </div>
     <div class="card msg">
       ⏳ 답안 제출 완료<br>
@@ -137,7 +157,7 @@
 const socket = io();
 const $ = id => document.getElementById(id);
 const show = id => {
-  ['join','waiting','answering','answered','revealing','ranking','finished'].forEach(s => $(s).classList.remove('active'));
+  ['join','waiting','countdown','answering','answered','revealing','ranking','finished'].forEach(s => $(s).classList.remove('active'));
   $(id).classList.add('active');
 };
 
@@ -145,6 +165,7 @@ let myScore = 0;
 let myNick = '';
 let lastDelta = 0;
 let lastCorrect = false;
+let currentTimeLimit = 30;
 
 $('joinBtn').onclick = () => {
   const pin = $('pinInput').value.trim();
@@ -163,7 +184,17 @@ socket.on('lobby:players', (players) => {
   ).join('');
 });
 
+socket.on('countdown:tick', ({ count }) => {
+  show('countdown');
+  const el = $('countdownNum');
+  el.textContent = count;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+});
+
 socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
+  currentTimeLimit = timeLimit;
   $('qNumber').textContent = `문제 ${index+1} / ${total}`;
   $('qNumberA').textContent = `문제 ${index+1} / ${total}`;
   $('qTextPlayer').textContent = q;
@@ -171,19 +202,22 @@ socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
     btn.disabled = false;
     btn.textContent = `${i+1}. ${choices[i] ?? ''}`;
   });
-  $('timer').textContent = String(timeLimit).padStart(2,'0');
-  $('timerA').textContent = String(timeLimit).padStart(2,'0');
+  setBar(100);
   show('answering');
 });
 
 socket.on('tick', ({ remaining }) => {
-  const s = String(remaining).padStart(2,'0');
-  $('timer').textContent = s;
-  $('timerA').textContent = s;
-  const warn = remaining <= 5;
-  $('timer').classList.toggle('warning', warn);
-  $('timerA').classList.toggle('warning', warn);
+  const pct = Math.max(0, (remaining / currentTimeLimit) * 100);
+  setBar(pct);
 });
+
+function setBar(pct) {
+  const color = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
+  [$('timerBar'), $('timerBarA')].forEach(el => {
+    el.style.width = pct + '%';
+    el.style.background = color;
+  });
+}
 
 document.querySelectorAll('.choice-btn').forEach(btn => {
   btn.onclick = () => {

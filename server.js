@@ -109,7 +109,7 @@ io.on('connection', (socket) => {
     if (!room || socket.id !== room.hostId) return;
     if (room.state !== 'lobby') return;
     if (room.players.size === 0) return socket.emit('error:msg', '참가자가 없습니다');
-    startQuestion(pin);
+    countdown(pin);
   });
 
   socket.on('player:answer', ({ choice }) => {
@@ -165,6 +165,23 @@ io.on('connection', (socket) => {
 // =============================================================
 // 게임 진행 (자동)
 // =============================================================
+
+function countdown(pin) {
+  const room = rooms.get(pin);
+  if (!room) return;
+  room.state = 'countdown';
+  let count = 3;
+  io.to(pin).emit('countdown:tick', { count });
+  room.tickInterval = setInterval(() => {
+    count -= 1;
+    if (count > 0) {
+      io.to(pin).emit('countdown:tick', { count });
+    } else {
+      clearRoomTimers(room);
+      startQuestion(pin);
+    }
+  }, 1000);
+}
 
 function startQuestion(pin) {
   const room = rooms.get(pin);
@@ -239,7 +256,7 @@ function endGame(pin) {
   io.to(pin).emit('game:ended', { leaderboard: leaderboard(room) });
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 server.listen(PORT, () => {
   console.log(`✅ QuizN clone running on http://localhost:${PORT}`);
   console.log(`   호스트:   http://localhost:${PORT}/host`);
