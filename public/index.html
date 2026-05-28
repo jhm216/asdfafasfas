@@ -2,186 +2,477 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>QuizN Clone</title>
+<title>QuizN</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="/socket.io/socket.io.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing:border-box; }
-  body { font-family:-apple-system, sans-serif; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; margin:0; min-height:100vh; padding:20px; }
-  .container { max-width:500px; margin:0 auto; }
-  .card { background:#fff; color:#222; padding:24px; border-radius:16px; margin-bottom:16px; }
-  input { width:100%; padding:16px; font-size:20px; border:2px solid #e5e7eb; border-radius:8px; margin-bottom:12px; }
-  input:focus { outline:none; border-color:#6366f1; }
-  button.primary { width:100%; background:#6366f1; color:#fff; border:none; padding:16px; font-size:18px; font-weight:700; border-radius:8px; cursor:pointer; }
-  button.primary:hover { background:#4f46e5; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
-  /* 카운트다운 */
-  #countdown { display:none; text-align:center; padding-top:15vh; }
-  .countdown-num { font-size:220px; font-weight:900; line-height:1; animation:popCount .85s ease-out forwards; }
-  @keyframes popCount {
-    0%   { transform:scale(2); opacity:0; }
-    40%  { transform:scale(1); opacity:1; }
-    100% { transform:scale(.6); opacity:0; }
-  }
+:root {
+  --bg:    #09090f;
+  --s1:    rgba(255,255,255,.06);
+  --s2:    rgba(255,255,255,.1);
+  --bd:    rgba(255,255,255,.1);
+  --bd-hi: rgba(255,255,255,.2);
+  --p:     #7c3aed;
+  --p-lt:  #a78bfa;
+  --p-glow:rgba(124,58,237,.22);
+  --tx:    #f1f5f9;
+  --dim:   #94a3b8;
+  --mute:  #475569;
+}
 
-  /* 진행 바 */
-  .q-info-bar { display:flex; justify-content:space-between; align-items:center; padding:8px 4px; font-weight:700; margin-bottom:8px; }
-  .timer-wrap { background:rgba(0,0,0,.25); border-radius:8px; height:14px; overflow:hidden; margin-bottom:12px; }
-  .timer-fill { height:100%; background:#22c55e; border-radius:8px; width:100%; transition:width .85s linear, background .3s; }
+body {
+  font-family:'Outfit',-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--tx);
+  min-height:100vh;
+  padding:20px 16px;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 5% 5%,  rgba(124,58,237,.2) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 40% at 95% 95%, rgba(6,182,212,.08) 0%,transparent 50%);
+}
 
-  /* 선택지 */
-  .q-text { font-size:18px; font-weight:700; margin:0 0 16px; color:#222; }
-  .choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .choice-btn { padding:32px 12px; color:#fff; font-weight:800; font-size:18px; border:none; border-radius:8px; cursor:pointer; min-height:100px; word-break:keep-all; }
-  .choice-btn.c0 { background:#ef4444; } .choice-btn.c1 { background:#3b82f6; }
-  .choice-btn.c2 { background:#eab308; } .choice-btn.c3 { background:#22c55e; }
-  .choice-btn:disabled { opacity:.3; }
-  .choice-btn:active:not(:disabled) { transform:scale(.95); }
+.wrap {
+  max-width:460px;
+  margin:0 auto;
+  min-height:calc(100vh - 40px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
 
-  /* 결과 */
-  .result-big { text-align:center; font-size:56px; font-weight:900; margin:16px 0; }
-  .result-big.correct { color:#22c55e; }
-  .result-big.wrong { color:#ef4444; }
-  .score-display { text-align:center; font-size:48px; font-weight:900; margin:8px 0; }
-  .delta-display { text-align:center; color:#666; font-weight:700; }
+/* ── Card ── */
+.card {
+  background:var(--s1);
+  border:1px solid var(--bd);
+  border-radius:20px;
+  padding:28px 24px;
+  margin-bottom:12px;
+  backdrop-filter:blur(12px);
+}
 
-  /* 랭킹 */
-  .rank-list { display:flex; flex-direction:column; gap:8px; }
-  .rank-row { display:flex; align-items:center; background:#f9fafb; border-radius:8px; padding:10px 14px; gap:10px; }
-  .rank-row.me { background:#6366f1; color:#fff; transform:scale(1.05); }
-  .rank-num { font-weight:900; min-width:40px; }
-  .rank-nick { flex:1; font-weight:700; }
-  .rank-score { font-weight:800; }
+/* ── Brand ── */
+.brand {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:32px;
+}
+.brand-icon {
+  width:46px;height:46px;
+  background:linear-gradient(135deg,var(--p),#6d28d9);
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  box-shadow:0 6px 24px var(--p-glow);
+  flex-shrink:0;
+}
+.brand-name {
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:-1px;
+  background:linear-gradient(120deg,#fff 30%,var(--p-lt));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
 
-  .msg { text-align:center; padding:20px; font-size:20px; font-weight:700; }
-  small { font-weight:400; color:#666; font-size:13px; }
+/* ── Inputs ── */
+.field { margin-bottom:14px; }
+.field label {
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:7px;
+}
+.field input {
+  width:100%;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid var(--bd);
+  border-radius:12px;
+  padding:14px 16px;
+  font-family:inherit;
+  font-size:17px;
+  font-weight:600;
+  color:var(--tx);
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.field input::placeholder { color:var(--mute);font-weight:500; }
+.field input:focus {
+  border-color:var(--p-lt);
+  box-shadow:0 0 0 4px rgba(124,58,237,.18);
+}
 
-  .lobby-section { margin-top:16px; text-align:left; }
-  .lobby-section h3 { font-size:14px; color:#888; margin:0 0 8px; font-weight:600; }
-  .player-chip { display:inline-block; background:#6366f1; color:#fff; padding:6px 14px; margin:3px; border-radius:20px; font-weight:700; font-size:14px; }
+/* ── Button ── */
+.btn {
+  width:100%;
+  margin-top:6px;
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:15px 20px;
+  font-family:inherit;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  letter-spacing:.02em;
+  transition:transform .15s,box-shadow .2s;
+  box-shadow:0 4px 20px var(--p-glow);
+}
+.btn:hover  { transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,58,237,.45); }
+.btn:active { transform:translateY(0); }
 
-  #join, #waiting, #countdown, #answering, #answered, #revealing, #ranking, #finished { display:none; }
-  .active { display:block !important; }
+/* ── Waiting ── */
+.status-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:rgba(16,185,129,.12);
+  border:1px solid rgba(52,211,153,.25);
+  color:#34d399;
+  padding:7px 16px;
+  border-radius:100px;
+  font-weight:700;
+  font-size:14px;
+  margin-bottom:10px;
+}
+.dot-live {
+  width:7px;height:7px;
+  background:#34d399;
+  border-radius:50%;
+  animation:blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+.w-title { font-size:22px;font-weight:800;margin-bottom:6px; }
+.w-sub   { font-size:14px;color:var(--dim); }
+
+.section-lbl {
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--mute);
+  margin:20px 0 10px;
+}
+.chips { display:flex;flex-wrap:wrap;gap:8px;min-height:28px; }
+.chip {
+  background:rgba(124,58,237,.18);
+  border:1px solid rgba(167,139,250,.25);
+  color:#c4b5fd;
+  padding:5px 14px;
+  border-radius:100px;
+  font-weight:700;
+  font-size:14px;
+  animation:chipPop .2s ease;
+}
+@keyframes chipPop { from{transform:scale(.75);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* ── Countdown (fullscreen) ── */
+#countdown {
+  position:fixed;inset:0;
+  background:var(--bg);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:99;
+}
+.cnum {
+  font-size:160px;
+  font-weight:900;
+  line-height:1;
+  background:linear-gradient(to bottom,#fff 30%,var(--p-lt));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:cdAnim .9s ease-out forwards;
+}
+@keyframes cdAnim {
+  0%   { transform:scale(2.5);opacity:0; }
+  35%  { transform:scale(1);  opacity:1; }
+  100% { transform:scale(.4); opacity:0; }
+}
+.cnum-lbl {
+  margin-top:20px;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--mute);
+}
+
+/* ── Timer bar ── */
+.q-meta {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+.q-lbl {
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.t-track {
+  height:8px;
+  background:rgba(255,255,255,.1);
+  border-radius:100px;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+.t-fill {
+  height:100%;
+  border-radius:100px;
+  background:#10b981;
+  transition:width .85s linear,background .5s;
+}
+
+/* ── Question ── */
+.q-card {
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--bd);
+  border-radius:18px;
+  padding:22px 18px;
+  font-size:18px;
+  font-weight:700;
+  line-height:1.55;
+  text-align:center;
+  margin-bottom:14px;
+}
+.choices {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.cbtn {
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  min-height:86px;
+  display:flex;
+  align-items:center;
+  padding:14px 12px;
+  gap:8px;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:800;
+  color:#fff;
+  text-align:left;
+  transition:transform .12s,filter .15s;
+  word-break:keep-all;
+}
+.cbtn:active:not(:disabled) { transform:scale(.95); }
+.cbtn:disabled { filter:brightness(.35);cursor:not-allowed; }
+.cbtn .sh { font-size:17px;flex-shrink:0;opacity:.85; }
+.cbtn.c0 { background:linear-gradient(145deg,#ef4444,#b91c1c);box-shadow:0 4px 18px rgba(239,68,68,.3); }
+.cbtn.c1 { background:linear-gradient(145deg,#3b82f6,#1d4ed8);box-shadow:0 4px 18px rgba(59,130,246,.3); }
+.cbtn.c2 { background:linear-gradient(145deg,#f59e0b,#b45309);box-shadow:0 4px 18px rgba(245,158,11,.3); }
+.cbtn.c3 { background:linear-gradient(145deg,#22c55e,#15803d);box-shadow:0 4px 18px rgba(34,197,94,.3); }
+
+/* ── Answered ── */
+.await-card { text-align:center;padding:36px 20px; }
+.await-card .ico { font-size:44px;margin-bottom:12px; }
+.await-card h2  { font-size:20px;font-weight:800;margin-bottom:6px; }
+.await-card p   { font-size:14px;color:var(--dim); }
+
+/* ── Reveal ── */
+.reveal-card { text-align:center;padding:36px 20px; }
+.rev-emoji { font-size:64px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
+@keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+.rev-lbl { font-size:26px;font-weight:900;margin:12px 0 4px; }
+.rev-lbl.ok { color:#34d399; }
+.rev-lbl.no { color:#f87171; }
+.score-num { font-size:52px;font-weight:900;letter-spacing:-2px;margin:8px 0; }
+.delta-pill {
+  display:inline-block;
+  padding:4px 16px;
+  border-radius:100px;
+  font-size:14px;
+  font-weight:800;
+}
+.delta-pill.pos { background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399; }
+.delta-pill.neg { background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.25);color:#f87171; }
+
+/* ── Ranking ── */
+.rank-hd { text-align:center;font-size:20px;font-weight:800;margin-bottom:16px; }
+.rlist { display:flex;flex-direction:column;gap:8px; }
+.rrow {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  background:var(--s1);
+  border:1px solid var(--bd);
+  border-radius:14px;
+  animation:slideUp .4s ease both;
+}
+@keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+.rrow.me   { background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(167,139,250,.12));border-color:rgba(167,139,250,.35); }
+.rrow.top1 { background:linear-gradient(135deg,rgba(250,204,21,.14),rgba(245,158,11,.08));border-color:rgba(250,204,21,.3); }
+.rmedal { font-size:22px;min-width:34px;text-align:center; }
+.rnick  { flex:1;font-weight:700;font-size:16px; }
+.rscore { font-weight:900;font-size:15px;color:var(--p-lt); }
+
+/* ── Finished ── */
+.fin-top { text-align:center;padding:32px 0 20px; }
+.fin-top .tro { font-size:64px; }
+.fin-top h2   { font-size:28px;font-weight:900;margin:10px 0 4px; }
+.fin-top p    { font-size:14px;color:var(--dim); }
+.fin-score    { text-align:center;font-size:58px;font-weight:900;letter-spacing:-2px;padding:12px 0; }
+.fin-rank     { font-size:14px;color:var(--dim);text-align:center;font-weight:600;margin-bottom:20px; }
+
+/* ── Visibility ── */
+#join,#waiting,#countdown,#answering,#answered,#revealing,#ranking,#finished { display:none; }
+#join.active,#waiting.active,#answering.active,#answered.active,#revealing.active,#ranking.active,#finished.active { display:block; }
+#countdown.active { display:flex; }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
+  <!-- JOIN -->
   <div id="join" class="active">
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div class="brand-name">QuizN</div>
+    </div>
     <div class="card">
-      <h1 style="margin:0 0 16px;">🎯 참여하기</h1>
-      <input id="pinInput" type="text" inputmode="numeric" maxlength="6" placeholder="PIN 6자리">
-      <input id="nickInput" type="text" maxlength="16" placeholder="닉네임">
-      <button class="primary" id="joinBtn">참여</button>
+      <div class="field">
+        <label>게임 PIN</label>
+        <input id="pinInput" type="text" inputmode="numeric" maxlength="6" placeholder="6자리 숫자 입력">
+      </div>
+      <div class="field">
+        <label>닉네임</label>
+        <input id="nickInput" type="text" maxlength="16" placeholder="표시될 이름">
+      </div>
+      <button class="btn" id="joinBtn">게임 참여하기</button>
     </div>
   </div>
 
+  <!-- WAITING -->
   <div id="waiting">
-    <div class="card">
-      <div class="msg" style="padding:8px 0;">
-        ✅ 입장 완료!<br>
-        <small>호스트가 시작하기를 기다리는 중...</small>
-      </div>
-      <div class="lobby-section">
-        <h3>참가자 (<span id="lobbyCount">0</span>명)</h3>
-        <div id="lobbyPlayerList"></div>
-      </div>
+    <div class="card" style="text-align:center;">
+      <div class="status-badge"><span class="dot-live"></span>입장 완료</div>
+      <div class="w-title" id="waitNick"></div>
+      <div class="w-sub">호스트가 게임을 시작하기를 기다리는 중...</div>
+      <div class="section-lbl">참가자 <span id="lobbyCount">0</span>명</div>
+      <div class="chips" id="lobbyPlayerList"></div>
     </div>
   </div>
 
+  <!-- COUNTDOWN -->
   <div id="countdown">
-    <div class="countdown-num" id="countdownNum">3</div>
+    <div class="cnum" id="countdownNum">3</div>
+    <div class="cnum-lbl">Game Start</div>
   </div>
 
+  <!-- ANSWERING -->
   <div id="answering">
-    <div class="q-info-bar">
-      <span id="qNumber">문제 1</span>
+    <div class="q-meta">
+      <span class="q-lbl" id="qNumber">문제 1</span>
     </div>
-    <div class="timer-wrap">
-      <div class="timer-fill" id="timerBar"></div>
+    <div class="t-track"><div class="t-fill" id="timerBar"></div></div>
+    <div class="q-card" id="qTextPlayer"></div>
+    <div class="choices">
+      <button class="cbtn c0" data-i="0"><span class="sh">▲</span><span class="qt"></span></button>
+      <button class="cbtn c1" data-i="1"><span class="sh">♦</span><span class="qt"></span></button>
+      <button class="cbtn c2" data-i="2"><span class="sh">●</span><span class="qt"></span></button>
+      <button class="cbtn c3" data-i="3"><span class="sh">■</span><span class="qt"></span></button>
     </div>
+  </div>
+
+  <!-- ANSWERED -->
+  <div id="answered">
+    <div class="q-meta">
+      <span class="q-lbl" id="qNumberA">문제 1</span>
+    </div>
+    <div class="t-track"><div class="t-fill" id="timerBarA"></div></div>
     <div class="card">
-      <div class="q-text" id="qTextPlayer"></div>
-      <div class="choices">
-        <button class="choice-btn c0" data-i="0">1</button>
-        <button class="choice-btn c1" data-i="1">2</button>
-        <button class="choice-btn c2" data-i="2">3</button>
-        <button class="choice-btn c3" data-i="3">4</button>
+      <div class="await-card">
+        <div class="ico">⏳</div>
+        <h2>답안 제출 완료!</h2>
+        <p>다른 참가자들을 기다리는 중...</p>
       </div>
     </div>
   </div>
 
-  <div id="answered">
-    <div class="q-info-bar">
-      <span id="qNumberA">문제 1</span>
-    </div>
-    <div class="timer-wrap">
-      <div class="timer-fill" id="timerBarA"></div>
-    </div>
-    <div class="card msg">
-      ⏳ 답안 제출 완료<br>
-      <small>다른 사람들을 기다리는 중...</small>
-    </div>
-  </div>
-
+  <!-- REVEAL -->
   <div id="revealing">
     <div class="card">
-      <div class="result-big" id="resultBig"></div>
-      <div class="score-display" id="scoreBig">0점</div>
-      <div class="delta-display"><span id="deltaBig">+0</span>점 획득</div>
+      <div class="reveal-card">
+        <div class="rev-emoji" id="revEmoji"></div>
+        <div class="rev-lbl"   id="revLabel"></div>
+        <div class="score-num" id="scoreBig">0점</div>
+        <span class="delta-pill" id="deltaPill">+0점</span>
+      </div>
     </div>
   </div>
 
+  <!-- RANKING -->
   <div id="ranking">
     <div class="card">
-      <h2 style="margin:0 0 16px; text-align:center;">🏆 현재 순위</h2>
-      <div class="rank-list" id="rankList"></div>
+      <div class="rank-hd">🏆 현재 순위</div>
+      <div class="rlist" id="rankList"></div>
     </div>
   </div>
 
+  <!-- FINISHED -->
   <div id="finished">
-    <div class="card msg">
-      🏁 게임 종료!<br>
-      <div class="score-display" id="finalScore">0점</div>
-      <small id="finalRankMsg"></small>
+    <div class="fin-top">
+      <div class="tro">🏆</div>
+      <h2>게임 종료!</h2>
+      <p>수고했어요</p>
     </div>
     <div class="card">
-      <h3 style="margin:0 0 12px;">최종 순위</h3>
-      <div class="rank-list" id="finalRank"></div>
+      <div class="fin-score" id="finalScore">0점</div>
+      <div class="fin-rank"  id="finalRankMsg"></div>
+    </div>
+    <div class="card">
+      <div class="rank-hd">최종 순위</div>
+      <div class="rlist" id="finalRank"></div>
     </div>
   </div>
 
 </div>
-
 <script>
 const socket = io();
 const $ = id => document.getElementById(id);
 const show = id => {
-  ['join','waiting','countdown','answering','answered','revealing','ranking','finished'].forEach(s => $(s).classList.remove('active'));
+  ['join','waiting','countdown','answering','answered','revealing','ranking','finished']
+    .forEach(s => $(s).classList.remove('active'));
   $(id).classList.add('active');
 };
 
-let myScore = 0;
-let myNick = '';
-let lastDelta = 0;
-let lastCorrect = false;
-let currentTimeLimit = 30;
+let myScore = 0, myNick = '', lastDelta = 0, lastCorrect = false, tLimit = 30;
 
 $('joinBtn').onclick = () => {
-  const pin = $('pinInput').value.trim();
+  const pin  = $('pinInput').value.trim();
   const nick = $('nickInput').value.trim();
   if (!pin || !nick) return alert('PIN과 닉네임을 모두 입력하세요');
   myNick = nick;
   socket.emit('player:join', { pin, nick });
 };
 
-socket.on('player:joined', () => show('waiting'));
+socket.on('player:joined', () => {
+  $('waitNick').textContent = myNick;
+  show('waiting');
+});
 
-socket.on('lobby:players', (players) => {
+socket.on('lobby:players', players => {
   $('lobbyCount').textContent = players.length;
-  $('lobbyPlayerList').innerHTML = players.map(p =>
-    `<span class="player-chip">${escapeHtml(p.nick)}</span>`
-  ).join('');
+  $('lobbyPlayerList').innerHTML = players.map(p => `<span class="chip">${esc(p.nick)}</span>`).join('');
 });
 
 socket.on('countdown:tick', ({ count }) => {
@@ -194,89 +485,76 @@ socket.on('countdown:tick', ({ count }) => {
 });
 
 socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
-  currentTimeLimit = timeLimit;
-  $('qNumber').textContent = `문제 ${index+1} / ${total}`;
-  $('qNumberA').textContent = `문제 ${index+1} / ${total}`;
+  tLimit = timeLimit;
+  $('qNumber').textContent  = `문제 ${index+1} · ${total}문제`;
+  $('qNumberA').textContent = `문제 ${index+1} · ${total}문제`;
   $('qTextPlayer').textContent = q;
-  document.querySelectorAll('.choice-btn').forEach((btn,i) => {
+  document.querySelectorAll('.cbtn').forEach((btn, i) => {
     btn.disabled = false;
-    btn.textContent = `${i+1}. ${choices[i] ?? ''}`;
+    btn.querySelector('.qt').textContent = choices[i] ?? '';
   });
   setBar(100);
   show('answering');
 });
 
-socket.on('tick', ({ remaining }) => {
-  const pct = Math.max(0, (remaining / currentTimeLimit) * 100);
-  setBar(pct);
-});
+socket.on('tick', ({ remaining }) => setBar(Math.max(0, remaining / tLimit * 100)));
 
 function setBar(pct) {
-  const color = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
-  [$('timerBar'), $('timerBarA')].forEach(el => {
-    el.style.width = pct + '%';
-    el.style.background = color;
-  });
+  const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
+  [$('timerBar'), $('timerBarA')].forEach(el => { if(el){ el.style.width = pct+'%'; el.style.background = color; }});
 }
 
-document.querySelectorAll('.choice-btn').forEach(btn => {
+document.querySelectorAll('.cbtn').forEach(btn => {
   btn.onclick = () => {
-    const i = parseInt(btn.dataset.i);
-    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    socket.emit('player:answer', { choice: i });
+    document.querySelectorAll('.cbtn').forEach(b => b.disabled = true);
+    socket.emit('player:answer', { choice: parseInt(btn.dataset.i) });
   };
 });
 
 socket.on('player:answered', ({ correct, delta, score }) => {
-  myScore = score;
-  lastDelta = delta;
-  lastCorrect = correct;
+  myScore = score; lastDelta = delta; lastCorrect = correct;
   show('answered');
 });
 
 socket.on('answer:reveal', () => {
-  if (lastDelta === undefined && !$('answered').classList.contains('active')) {
-    $('resultBig').textContent = '⏰ 시간 종료';
-    $('resultBig').className = 'result-big wrong';
-    $('deltaBig').textContent = '+0';
-  } else {
-    $('resultBig').textContent = lastCorrect ? '✅ 정답!' : '❌ 오답';
-    $('resultBig').className = 'result-big ' + (lastCorrect ? 'correct' : 'wrong');
-    $('deltaBig').textContent = '+' + lastDelta;
-  }
-  $('scoreBig').textContent = myScore + '점';
+  $('revEmoji').textContent  = lastCorrect ? '✅' : '❌';
+  $('revLabel').textContent  = lastCorrect ? '정답!' : '오답';
+  $('revLabel').className    = 'rev-lbl ' + (lastCorrect ? 'ok' : 'no');
+  $('scoreBig').textContent  = myScore + '점';
+  const pill = $('deltaPill');
+  pill.textContent  = (lastDelta > 0 ? '+' : '') + lastDelta + '점';
+  pill.className    = 'delta-pill ' + (lastDelta > 0 ? 'pos' : 'neg');
   show('revealing');
 });
 
 socket.on('ranking:show', ({ leaderboard }) => {
-  renderRank('rankList', leaderboard, myNick);
+  renderRank('rankList', leaderboard);
   show('ranking');
 });
 
 socket.on('game:ended', ({ leaderboard }) => {
-  const myRank = leaderboard.findIndex(p => p.nick === myNick);
-  $('finalScore').textContent = myScore + '점';
-  $('finalRankMsg').textContent = myRank >= 0 ? `${myRank+1}위 / ${leaderboard.length}명 중` : '';
-  renderRank('finalRank', leaderboard, myNick);
+  const idx = leaderboard.findIndex(p => p.nick === myNick);
+  $('finalScore').textContent   = myScore + '점';
+  $('finalRankMsg').textContent = idx >= 0 ? `${idx+1}위 / ${leaderboard.length}명` : '';
+  renderRank('finalRank', leaderboard);
   show('finished');
 });
 
-function renderRank(containerId, board, me) {
-  $(containerId).innerHTML = board.map((p,i) => {
+function renderRank(id, board) {
+  $(id).innerHTML = board.map((p, i) => {
     const medal = ['🥇','🥈','🥉'][i] || `${i+1}위`;
-    const isMe = p.nick === me ? 'me' : '';
-    return `<div class="rank-row ${isMe}">
-      <span class="rank-num">${medal}</span>
-      <span class="rank-nick">${escapeHtml(p.nick)}</span>
-      <span class="rank-score">${p.score}점</span>
+    const cls   = p.nick === myNick ? 'me' : i === 0 ? 'top1' : '';
+    return `<div class="rrow ${cls}" style="animation-delay:${i*.06}s">
+      <span class="rmedal">${medal}</span>
+      <span class="rnick">${esc(p.nick)}</span>
+      <span class="rscore">${p.score}점</span>
     </div>`;
   }).join('');
 }
 
 socket.on('error:msg', msg => alert(msg));
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 </script>
 </body>

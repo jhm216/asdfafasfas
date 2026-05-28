@@ -2,150 +2,454 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>호스트 - QuizN Clone</title>
+<title>QuizN — 호스트</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="/socket.io/socket.io.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  body { font-family:-apple-system, BlinkMacSystemFont, sans-serif; background:#1e1b4b; color:#fff; margin:0; min-height:100vh; padding:24px; }
-  .container { max-width:1100px; margin:0 auto; }
-  h1, h2, h3 { margin:0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
-  /* === Setup === */
-  #setup { text-align:center; padding-top:80px; }
-  #setup h1 { font-size:48px; margin-bottom:32px; }
-  #setup button { background:#fbbf24; color:#1e1b4b; border:none; padding:24px 64px; font-size:24px; font-weight:800; border-radius:12px; cursor:pointer; }
+:root {
+  --bg:   #09090f;
+  --s1:   rgba(255,255,255,.06);
+  --bd:   rgba(255,255,255,.1);
+  --p:    #7c3aed;
+  --p-lt: #a78bfa;
+  --p-glow:rgba(124,58,237,.25);
+  --tx:   #f1f5f9;
+  --dim:  #94a3b8;
+  --mute: #475569;
+}
 
-  /* === Lobby === */
-  .pin-box { background:#fff; color:#1e1b4b; padding:32px; border-radius:16px; text-align:center; margin-bottom:24px; }
-  .pin { font-size:88px; font-weight:900; letter-spacing:12px; margin:8px 0; }
-  .label { color:#666; font-size:14px; }
-  .players { background:rgba(255,255,255,.1); padding:24px; border-radius:12px; margin-bottom:24px; min-height:120px; }
-  .player-chip { display:inline-block; background:#fff; color:#1e1b4b; padding:10px 18px; margin:4px; border-radius:24px; font-weight:700; }
-  .start-btn { width:100%; background:#fbbf24; color:#1e1b4b; border:none; padding:20px; font-size:22px; font-weight:800; border-radius:12px; cursor:pointer; }
-  .start-btn:disabled { opacity:.4; cursor:not-allowed; }
+html, body { height:100%; }
+body {
+  font-family:'Outfit',-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--tx);
+  min-height:100vh;
+  padding:32px;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 0% 0%,   rgba(124,58,237,.2)  0%,transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%,rgba(6,182,212,.08)  0%,transparent 50%);
+}
+.wrap { max-width:1200px; margin:0 auto; }
 
-  /* === Countdown === */
-  #countdown { display:none; text-align:center; padding-top:15vh; }
-  .countdown-num { font-size:320px; font-weight:900; line-height:1; color:#fbbf24; animation:popCount .85s ease-out forwards; }
-  @keyframes popCount {
-    0%   { transform:scale(2); opacity:0; }
-    40%  { transform:scale(1); opacity:1; }
-    100% { transform:scale(.6); opacity:0; }
-  }
+/* ════════════════ SETUP ════════════════ */
+#setup {
+  min-height:calc(100vh - 64px);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:0;
+}
+.setup-logo {
+  display:flex;align-items:center;gap:18px;
+  margin-bottom:16px;
+}
+.setup-icon {
+  width:68px;height:68px;
+  background:linear-gradient(135deg,var(--p),#6d28d9);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;
+  box-shadow:0 8px 36px var(--p-glow);
+}
+.setup-name {
+  font-size:clamp(40px,6vw,60px);
+  font-weight:900;
+  letter-spacing:-2px;
+  background:linear-gradient(120deg,#fff 30%,var(--p-lt));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.setup-sub {
+  font-size:17px;
+  color:var(--dim);
+  margin-bottom:48px;
+}
+.setup-btn {
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  color:#fff;
+  border:none;
+  border-radius:16px;
+  padding:20px 64px;
+  font-family:inherit;
+  font-size:20px;
+  font-weight:800;
+  cursor:pointer;
+  letter-spacing:.02em;
+  box-shadow:0 8px 32px var(--p-glow);
+  transition:transform .15s,box-shadow .2s;
+}
+.setup-btn:hover { transform:translateY(-3px);box-shadow:0 14px 42px rgba(124,58,237,.55); }
 
-  /* === Question === */
-  .q-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-  .q-progress { font-size:18px; opacity:.7; }
-  .timer-wrap { background:rgba(255,255,255,.15); border-radius:10px; height:18px; overflow:hidden; margin-bottom:24px; }
-  .timer-fill { height:100%; background:#22c55e; border-radius:10px; width:100%; transition:width .85s linear, background .3s; }
-  .q-text { background:#fff; color:#1e1b4b; padding:48px; border-radius:16px; font-size:36px; font-weight:700; text-align:center; margin-bottom:24px; }
-  .choices { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .choice { padding:28px; border-radius:12px; color:#fff; font-weight:700; font-size:22px; }
-  .choice.c0 { background:#ef4444; } .choice.c1 { background:#3b82f6; }
-  .choice.c2 { background:#eab308; } .choice.c3 { background:#22c55e; }
-  .progress-info { text-align:center; margin-top:24px; font-size:18px; opacity:.8; }
+/* ════════════════ LOBBY ════════════════ */
+#lobby {
+  gap:28px;
+  align-items:start;
+}
+.pin-panel {
+  background:var(--s1);
+  border:1px solid var(--bd);
+  border-radius:24px;
+  padding:40px 36px;
+  text-align:center;
+  position:sticky;
+  top:32px;
+}
+.pin-eyebrow {
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:20px;
+}
+.pin-num {
+  font-size:clamp(56px,9vw,96px);
+  font-weight:900;
+  letter-spacing:10px;
+  background:linear-gradient(to bottom,#fff,var(--p-lt));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1;
+  margin-bottom:20px;
+}
+.pin-hint {
+  font-size:13px;
+  color:var(--mute);
+  line-height:1.7;
+}
+.pin-hint strong { color:var(--dim); }
 
-  /* === Answer Reveal (큰 정답 표시) === */
-  .answer-reveal { text-align:center; padding-top:80px; }
-  .answer-reveal .big-label { font-size:32px; opacity:.7; margin-bottom:24px; }
-  .answer-reveal .big-answer { background:#22c55e; padding:64px; border-radius:24px; font-size:72px; font-weight:900; display:inline-block; min-width:60%; box-shadow:0 20px 60px rgba(34,197,94,.4); animation:popIn .4s; }
-  @keyframes popIn { from { transform:scale(.5); opacity:0; } to { transform:scale(1); opacity:1; } }
+.right-col { display:flex;flex-direction:column;gap:20px; }
 
-  /* === Ranking === */
-  .ranking-title { text-align:center; font-size:40px; font-weight:900; margin-bottom:32px; }
-  .rank-list { display:flex; flex-direction:column; gap:12px; }
-  .rank-row { display:flex; align-items:center; background:#fff; color:#1e1b4b; border-radius:12px; padding:16px 24px; gap:16px; animation:slideIn .5s ease both; }
-  @keyframes slideIn { from { transform:translateX(-30px); opacity:0; } to { transform:translateX(0); opacity:1; } }
-  .rank-num { font-size:28px; font-weight:900; min-width:48px; text-align:center; color:#6366f1; }
-  .rank-nick { font-weight:800; flex:1; }
-  .rank-score { font-weight:900; color:#6366f1; }
-  /* 점수 높을수록 글씨 크게 */
-  .rank-row.tier-1 { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
-  .rank-row.tier-1 .rank-nick { font-size:42px; }
-  .rank-row.tier-1 .rank-score { font-size:36px; }
-  .rank-row.tier-2 { background:linear-gradient(90deg,#e5e7eb,#d1d5db); }
-  .rank-row.tier-2 .rank-nick { font-size:34px; }
-  .rank-row.tier-2 .rank-score { font-size:30px; }
-  .rank-row.tier-3 { background:linear-gradient(90deg,#fed7aa,#fdba74); }
-  .rank-row.tier-3 .rank-nick { font-size:28px; }
-  .rank-row.tier-3 .rank-score { font-size:26px; }
-  .rank-row.tier-4 .rank-nick { font-size:22px; }
-  .rank-row.tier-4 .rank-score { font-size:22px; }
-  .rank-row.tier-5 .rank-nick { font-size:18px; }
-  .rank-row.tier-5 .rank-score { font-size:18px; }
+.players-card {
+  background:var(--s1);
+  border:1px solid var(--bd);
+  border-radius:20px;
+  padding:24px;
+}
+.players-hd {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+.players-hd h3 {
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.p-count {
+  background:rgba(124,58,237,.2);
+  border:1px solid rgba(167,139,250,.25);
+  color:var(--p-lt);
+  padding:4px 12px;
+  border-radius:100px;
+  font-size:13px;
+  font-weight:800;
+}
+.pchips { display:flex;flex-wrap:wrap;gap:8px;min-height:36px; }
+.pchip {
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--bd);
+  color:var(--tx);
+  padding:7px 16px;
+  border-radius:100px;
+  font-size:15px;
+  font-weight:700;
+  animation:chipIn .2s ease;
+}
+@keyframes chipIn { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.empty-hint { color:var(--mute);font-size:14px;font-style:italic; }
 
-  /* === Ended === */
-  #ended { text-align:center; }
-  #ended h1 { font-size:56px; margin-bottom:32px; }
+.start-btn {
+  width:100%;
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  color:#fff;
+  border:none;
+  border-radius:16px;
+  padding:22px;
+  font-family:inherit;
+  font-size:19px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 6px 24px var(--p-glow);
+  transition:transform .15s,box-shadow .2s,opacity .2s;
+  letter-spacing:.02em;
+}
+.start-btn:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 12px 36px rgba(124,58,237,.55); }
+.start-btn:disabled { opacity:.3;cursor:not-allowed; }
 
-  #setup, #lobby, #countdown, #playing, #answering, #ranking, #ended { display:none; }
-  .active { display:block !important; }
+/* ════════════════ COUNTDOWN ════════════════ */
+#countdown {
+  position:fixed;inset:0;
+  background:var(--bg);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:99;
+}
+.cnum {
+  font-size:clamp(160px,24vw,320px);
+  font-weight:900;
+  line-height:1;
+  background:linear-gradient(to bottom,#fff 20%,var(--p-lt));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:cdAnim .9s ease-out forwards;
+  filter:drop-shadow(0 0 80px rgba(167,139,250,.35));
+}
+@keyframes cdAnim {
+  0%   { transform:scale(2.5);opacity:0; }
+  35%  { transform:scale(1);  opacity:1; }
+  100% { transform:scale(.4); opacity:0; }
+}
+.cnum-lbl {
+  margin-top:24px;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--mute);
+}
+
+/* ════════════════ QUESTION ════════════════ */
+.q-hd {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.q-prog {
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.t-track {
+  height:10px;
+  background:rgba(255,255,255,.1);
+  border-radius:100px;
+  overflow:hidden;
+  margin-bottom:28px;
+}
+.t-fill {
+  height:100%;
+  border-radius:100px;
+  background:#10b981;
+  transition:width .85s linear,background .5s;
+}
+.q-text {
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--bd);
+  border-radius:20px;
+  padding:48px 40px;
+  font-size:clamp(22px,3.5vw,40px);
+  font-weight:700;
+  text-align:center;
+  line-height:1.4;
+  margin-bottom:24px;
+}
+.choices {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.choice {
+  border-radius:18px;
+  padding:28px 24px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-size:clamp(16px,2vw,24px);
+  font-weight:800;
+  color:#fff;
+}
+.choice .sh { font-size:1.3em;opacity:.85;flex-shrink:0; }
+.choice.c0 { background:linear-gradient(135deg,#ef4444,#b91c1c); }
+.choice.c1 { background:linear-gradient(135deg,#3b82f6,#1d4ed8); }
+.choice.c2 { background:linear-gradient(135deg,#f59e0b,#b45309); }
+.choice.c3 { background:linear-gradient(135deg,#22c55e,#15803d); }
+.q-prog-info {
+  text-align:center;
+  margin-top:20px;
+  font-size:16px;
+  font-weight:700;
+  color:var(--dim);
+}
+
+/* ════════════════ ANSWER REVEAL ════════════════ */
+#answering {
+  min-height:calc(100vh - 64px);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.rev-eyebrow {
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:28px;
+}
+.rev-answer {
+  background:linear-gradient(135deg,#10b981,#059669);
+  border-radius:28px;
+  padding:52px 80px;
+  font-size:clamp(32px,5.5vw,68px);
+  font-weight:900;
+  max-width:900px;
+  box-shadow:0 24px 80px rgba(16,185,129,.32);
+  animation:answerPop .5s cubic-bezier(.34,1.56,.64,1);
+  word-break:keep-all;
+}
+@keyframes answerPop { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* ════════════════ RANKING ════════════════ */
+.ranking-hd {
+  text-align:center;
+  font-size:clamp(26px,4vw,44px);
+  font-weight:900;
+  margin-bottom:32px;
+}
+.rlist { display:flex;flex-direction:column;gap:12px;max-width:900px;margin:0 auto; }
+.rrow {
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:18px 28px;
+  background:var(--s1);
+  border:1px solid var(--bd);
+  border-radius:18px;
+  animation:slideIn .5s ease both;
+}
+@keyframes slideIn { from{transform:translateX(-20px);opacity:0} to{transform:translateX(0);opacity:1} }
+.rrow.t1 { background:linear-gradient(135deg,rgba(250,204,21,.18),rgba(245,158,11,.08));border-color:rgba(250,204,21,.38); }
+.rrow.t2 { background:linear-gradient(135deg,rgba(226,232,240,.1),rgba(203,213,225,.05));border-color:rgba(226,232,240,.18); }
+.rrow.t3 { background:linear-gradient(135deg,rgba(253,186,116,.14),rgba(249,115,22,.07));border-color:rgba(253,186,116,.28); }
+.rmedal { font-weight:900;min-width:52px;text-align:center;flex-shrink:0; }
+.rrow.t1 .rmedal { font-size:38px; }
+.rrow.t2 .rmedal { font-size:32px; }
+.rrow.t3 .rmedal { font-size:26px; }
+.rrow:not(.t1):not(.t2):not(.t3) .rmedal { font-size:20px;color:var(--dim); }
+.rnick { flex:1;font-weight:800; }
+.rrow.t1 .rnick { font-size:clamp(22px,3.8vw,42px); }
+.rrow.t2 .rnick { font-size:clamp(18px,3vw,34px); }
+.rrow.t3 .rnick { font-size:clamp(16px,2.4vw,28px); }
+.rrow:not(.t1):not(.t2):not(.t3) .rnick { font-size:20px; }
+.rscore { font-weight:900;color:var(--p-lt);flex-shrink:0; }
+.rrow.t1 .rscore { font-size:clamp(18px,2.8vw,34px); }
+.rrow.t2 .rscore { font-size:clamp(16px,2.2vw,28px); }
+.rrow:not(.t1):not(.t2):not(.t3) .rscore { font-size:18px; }
+
+/* ════════════════ ENDED ════════════════ */
+#ended { text-align:center; }
+#ended h1 { font-size:clamp(36px,6vw,68px);font-weight:900;margin-bottom:40px; }
+
+/* ════════════════ VISIBILITY ════════════════ */
+#setup,#lobby,#countdown,#playing,#answering,#ranking,#ended { display:none; }
+#setup.active   { display:flex; }
+#lobby.active   { display:grid;grid-template-columns:1fr 1.45fr; }
+#countdown.active,#answering.active { display:flex; }
+#playing.active,#ranking.active,#ended.active { display:block; }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
+  <!-- SETUP -->
   <div id="setup" class="active">
-    <h1>🎯 호스트 모드</h1>
-    <button id="createBtn">방 만들기</button>
+    <div class="setup-logo">
+      <div class="setup-icon">🎯</div>
+      <div class="setup-name">QuizN</div>
+    </div>
+    <p class="setup-sub">실시간 퀴즈 플랫폼</p>
+    <button class="setup-btn" id="createBtn">새 게임 만들기</button>
   </div>
 
+  <!-- LOBBY -->
   <div id="lobby">
-    <div class="pin-box">
-      <div class="label">참가 PIN</div>
-      <div class="pin" id="pinDisplay">------</div>
-      <div class="label">플레이어에게 알려주세요 · 기본 페이지(/)에서 입력</div>
+    <div class="pin-panel">
+      <div class="pin-eyebrow">게임 PIN</div>
+      <div class="pin-num" id="pinDisplay">------</div>
+      <div class="pin-hint">
+        <strong>game.hansei.cam</strong> 접속 후<br>
+        위 PIN을 입력하세요
+      </div>
     </div>
-    <div class="players">
-      <h3>참가자 (<span id="playerCount">0</span>명)</h3>
-      <div id="playerList" style="margin-top:12px;"></div>
+    <div class="right-col">
+      <div class="players-card">
+        <div class="players-hd">
+          <h3>참가자</h3>
+          <span class="p-count" id="playerCount">0명</span>
+        </div>
+        <div class="pchips" id="playerList">
+          <span class="empty-hint">플레이어를 기다리는 중...</span>
+        </div>
+      </div>
+      <button class="start-btn" id="startBtn" disabled>퀴즈 시작하기</button>
     </div>
-    <button id="startBtn" class="start-btn" disabled>퀴즈 시작 (이후 자동 진행)</button>
   </div>
 
+  <!-- COUNTDOWN -->
   <div id="countdown">
-    <div class="countdown-num" id="countdownNum">3</div>
+    <div class="cnum" id="countdownNum">3</div>
+    <div class="cnum-lbl">Game Start</div>
   </div>
 
+  <!-- QUESTION -->
   <div id="playing">
-    <div class="q-header">
-      <div class="q-progress" id="qProgress">문제 1 / 5</div>
+    <div class="q-hd">
+      <span class="q-prog" id="qProgress">문제 1 / 5</span>
     </div>
-    <div class="timer-wrap">
-      <div class="timer-fill" id="timerBar"></div>
-    </div>
+    <div class="t-track"><div class="t-fill" id="timerBar"></div></div>
     <div class="q-text" id="qText"></div>
     <div class="choices" id="qChoices"></div>
-    <div class="progress-info" id="qProgressInfo"></div>
+    <div class="q-prog-info" id="qProgressInfo"></div>
   </div>
 
-  <div id="answering" class="answer-reveal">
-    <div class="big-label">정답</div>
-    <div class="big-answer" id="bigAnswer"></div>
+  <!-- ANSWER REVEAL -->
+  <div id="answering">
+    <div class="rev-eyebrow">정 답</div>
+    <div class="rev-answer" id="bigAnswer"></div>
   </div>
 
+  <!-- RANKING -->
   <div id="ranking">
-    <div class="ranking-title" id="rankingTitle">🏆 현재 순위</div>
-    <div class="rank-list" id="rankList"></div>
+    <div class="ranking-hd" id="rankingTitle">🏆 현재 순위</div>
+    <div class="rlist" id="rankList"></div>
   </div>
 
+  <!-- ENDED -->
   <div id="ended">
     <h1>🏆 게임 종료!</h1>
-    <div class="rank-list" id="finalRank"></div>
+    <div class="rlist" id="finalRank"></div>
   </div>
 
 </div>
-
 <script>
 const socket = io();
 const $ = id => document.getElementById(id);
 const show = id => {
-  ['setup','lobby','countdown','playing','answering','ranking','ended'].forEach(s => $(s).classList.remove('active'));
+  ['setup','lobby','countdown','playing','answering','ranking','ended']
+    .forEach(s => $(s).classList.remove('active'));
   $(id).classList.add('active');
 };
 
-let currentTimeLimit = 30;
+let tLimit = 30;
 
 $('createBtn').onclick = async () => {
   const res = await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
@@ -162,14 +466,14 @@ socket.on('host:joined', ({ pin, players }) => {
 socket.on('host:players', renderPlayers);
 
 function renderPlayers(players) {
-  $('playerCount').textContent = players.length;
-  $('playerList').innerHTML = players.map(p => `<span class="player-chip">${escapeHtml(p.nick)}</span>`).join('');
+  $('playerCount').textContent = players.length + '명';
+  $('playerList').innerHTML = players.length
+    ? players.map(p => `<span class="pchip">${esc(p.nick)}</span>`).join('')
+    : '<span class="empty-hint">플레이어를 기다리는 중...</span>';
   $('startBtn').disabled = players.length === 0;
 }
 
-$('startBtn').onclick = () => {
-  socket.emit('host:start');
-};
+$('startBtn').onclick = () => socket.emit('host:start');
 
 socket.on('countdown:tick', ({ count }) => {
   show('countdown');
@@ -180,42 +484,38 @@ socket.on('countdown:tick', ({ count }) => {
   el.style.animation = '';
 });
 
-// === 문제 표시 ===
 socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
-  currentTimeLimit = timeLimit;
+  tLimit = timeLimit;
   $('qProgress').textContent = `문제 ${index+1} / ${total}`;
   $('qText').textContent = q;
-  $('qChoices').innerHTML = choices.map((c,i) =>
-    `<div class="choice c${i}">${i+1}. ${escapeHtml(c)}</div>`).join('');
+  const shapes = ['▲','♦','●','■'];
+  $('qChoices').innerHTML = choices.map((c, i) =>
+    `<div class="choice c${i}"><span class="sh">${shapes[i]}</span>${esc(c)}</div>`
+  ).join('');
   $('qProgressInfo').textContent = '';
   setBar(100);
   show('playing');
 });
 
-socket.on('tick', ({ remaining }) => {
-  const pct = Math.max(0, (remaining / currentTimeLimit) * 100);
-  setBar(pct);
-});
+socket.on('tick', ({ remaining }) => setBar(Math.max(0, remaining / tLimit * 100)));
 
 function setBar(pct) {
-  const color = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
+  const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
   $('timerBar').style.width = pct + '%';
   $('timerBar').style.background = color;
 }
 
 socket.on('host:progress', ({ answered, total }) => {
-  $('qProgressInfo').textContent = `답변 ${answered} / ${total}`;
+  $('qProgressInfo').textContent = `${answered} / ${total}명 답변`;
 });
 
-// === 정답 공개 (큰 글씨) ===
 socket.on('answer:reveal', ({ answerText }) => {
   $('bigAnswer').textContent = answerText;
   show('answering');
 });
 
-// === 랭킹 화면 ===
 socket.on('ranking:show', ({ leaderboard, isLast }) => {
-  $('rankingTitle').textContent = isLast ? '🏆 최종 순위 발표' : '🏆 현재 순위';
+  $('rankingTitle').textContent = isLast ? '🏆 최종 순위' : '🏆 현재 순위';
   renderRanking('rankList', leaderboard);
   show('ranking');
 });
@@ -225,29 +525,22 @@ socket.on('game:ended', ({ leaderboard }) => {
   show('ended');
 });
 
-function renderRanking(containerId, board) {
-  const html = board.map((p, i) => {
-    // 점수 높은 순서 = 1~3등은 큰 tier, 그 다음은 점점 작게
-    let tier;
-    if (i === 0) tier = 1;
-    else if (i === 1) tier = 2;
-    else if (i === 2) tier = 3;
-    else if (i < 6) tier = 4;
-    else tier = 5;
-    const medal = ['🥇','🥈','🥉'][i] || (i+1)+'위';
-    return `<div class="rank-row tier-${tier}">
-      <div class="rank-num">${medal}</div>
-      <div class="rank-nick">${escapeHtml(p.nick)}</div>
-      <div class="rank-score">${p.score}점</div>
+function renderRanking(id, board) {
+  const tiers = ['t1','t2','t3'];
+  $(id).innerHTML = board.map((p, i) => {
+    const tier  = tiers[i] || '';
+    const medal = ['🥇','🥈','🥉'][i] || `${i+1}위`;
+    return `<div class="rrow ${tier}" style="animation-delay:${i*.08}s">
+      <span class="rmedal">${medal}</span>
+      <span class="rnick">${esc(p.nick)}</span>
+      <span class="rscore">${p.score}점</span>
     </div>`;
   }).join('');
-  $(containerId).innerHTML = html;
 }
 
 socket.on('error:msg', msg => alert(msg));
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 </script>
 </body>

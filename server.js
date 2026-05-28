@@ -25,7 +25,7 @@ const quizzes = JSON.parse(fs.readFileSync(path.join(__dirname, 'quizzes.json'),
 const rooms = new Map();
 
 const ANSWER_REVEAL_SEC = 3;   // 정답만 크게 보여주는 시간
-const RANKING_SEC = 5;          // 랭킹 보여주는 시간
+const RANKING_SEC = 3;          // 랭킹 보여주는 시간
 
 function generatePin() {
   let pin;
