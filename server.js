@@ -256,7 +256,7 @@ function endGame(pin) {
   io.to(pin).emit('game:ended', { leaderboard: leaderboard(room) });
 }
 
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 443;
 server.listen(PORT, () => {
   console.log(`✅ QuizN clone running on http://localhost:${PORT}`);
   console.log(`   호스트:   http://localhost:${PORT}/host`);
