@@ -248,7 +248,6 @@ body {
   height:100%;
   border-radius:100px;
   background:#10b981;
-  transition:width .85s linear,background .5s;
 }
 .q-text {
   background:rgba(255,255,255,.07);
@@ -449,7 +448,7 @@ const show = id => {
   $(id).classList.add('active');
 };
 
-let tLimit = 30;
+let tLimit = 30, timerRAF = null, qStartTs = 0;
 
 $('createBtn').onclick = async () => {
   const res = await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
@@ -493,16 +492,23 @@ socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
     `<div class="choice c${i}"><span class="sh">${shapes[i]}</span>${esc(c)}</div>`
   ).join('');
   $('qProgressInfo').textContent = '';
-  setBar(100);
+  startTimer(timeLimit);
   show('playing');
 });
 
-socket.on('tick', ({ remaining }) => setBar(Math.max(0, remaining / tLimit * 100)));
+socket.on('tick', () => {});
 
-function setBar(pct) {
-  const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
-  $('timerBar').style.width = pct + '%';
-  $('timerBar').style.background = color;
+function startTimer(dur) {
+  if (timerRAF) { cancelAnimationFrame(timerRAF); timerRAF = null; }
+  qStartTs = Date.now();
+  function frame() {
+    const pct   = Math.max(0, (1 - (Date.now() - qStartTs) / 1000 / dur) * 100);
+    const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
+    $('timerBar').style.width = pct + '%';
+    $('timerBar').style.background = color;
+    if (pct > 0) timerRAF = requestAnimationFrame(frame);
+  }
+  timerRAF = requestAnimationFrame(frame);
 }
 
 socket.on('host:progress', ({ answered, total }) => {

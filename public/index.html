@@ -236,7 +236,6 @@ body {
   height:100%;
   border-radius:100px;
   background:#10b981;
-  transition:width .85s linear,background .5s;
 }
 
 /* ── Question ── */
@@ -455,7 +454,8 @@ const show = id => {
   $(id).classList.add('active');
 };
 
-let myScore = 0, myNick = '', lastDelta = 0, lastCorrect = false, tLimit = 30;
+let myScore = 0, myNick = '', lastDelta = 0, lastCorrect = false, tLimit = 30,
+    hasAnswered = false, timerRAF = null, qStartTs = 0;
 
 $('joinBtn').onclick = () => {
   const pin  = $('pinInput').value.trim();
@@ -486,6 +486,7 @@ socket.on('countdown:tick', ({ count }) => {
 
 socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
   tLimit = timeLimit;
+  hasAnswered = false;
   $('qNumber').textContent  = `문제 ${index+1} · ${total}문제`;
   $('qNumberA').textContent = `문제 ${index+1} · ${total}문제`;
   $('qTextPlayer').textContent = q;
@@ -493,15 +494,24 @@ socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
     btn.disabled = false;
     btn.querySelector('.qt').textContent = choices[i] ?? '';
   });
-  setBar(100);
+  startTimer(timeLimit);
   show('answering');
 });
 
-socket.on('tick', ({ remaining }) => setBar(Math.max(0, remaining / tLimit * 100)));
+socket.on('tick', () => {});
 
-function setBar(pct) {
-  const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
-  [$('timerBar'), $('timerBarA')].forEach(el => { if(el){ el.style.width = pct+'%'; el.style.background = color; }});
+function startTimer(dur) {
+  if (timerRAF) { cancelAnimationFrame(timerRAF); timerRAF = null; }
+  qStartTs = Date.now();
+  function frame() {
+    const pct   = Math.max(0, (1 - (Date.now() - qStartTs) / 1000 / dur) * 100);
+    const color = pct > 55 ? '#10b981' : pct > 25 ? '#f59e0b' : '#ef4444';
+    [$('timerBar'), $('timerBarA')].forEach(el => {
+      if (el) { el.style.width = pct + '%'; el.style.background = color; }
+    });
+    if (pct > 0) timerRAF = requestAnimationFrame(frame);
+  }
+  timerRAF = requestAnimationFrame(frame);
 }
 
 document.querySelectorAll('.cbtn').forEach(btn => {
@@ -513,17 +523,26 @@ document.querySelectorAll('.cbtn').forEach(btn => {
 
 socket.on('player:answered', ({ correct, delta, score }) => {
   myScore = score; lastDelta = delta; lastCorrect = correct;
+  hasAnswered = true;
   show('answered');
 });
 
 socket.on('answer:reveal', () => {
-  $('revEmoji').textContent  = lastCorrect ? '✅' : '❌';
-  $('revLabel').textContent  = lastCorrect ? '정답!' : '오답';
-  $('revLabel').className    = 'rev-lbl ' + (lastCorrect ? 'ok' : 'no');
-  $('scoreBig').textContent  = myScore + '점';
-  const pill = $('deltaPill');
-  pill.textContent  = (lastDelta > 0 ? '+' : '') + lastDelta + '점';
-  pill.className    = 'delta-pill ' + (lastDelta > 0 ? 'pos' : 'neg');
+  if (!hasAnswered) {
+    $('revEmoji').textContent  = '⏰';
+    $('revLabel').textContent  = '시간 초과';
+    $('revLabel').className    = 'rev-lbl no';
+    $('deltaPill').textContent = '0점';
+    $('deltaPill').className   = 'delta-pill neg';
+  } else {
+    $('revEmoji').textContent = lastCorrect ? '✅' : '❌';
+    $('revLabel').textContent = lastCorrect ? '정답!' : '오답';
+    $('revLabel').className   = 'rev-lbl ' + (lastCorrect ? 'ok' : 'no');
+    const pill = $('deltaPill');
+    pill.textContent = (lastDelta > 0 ? '+' : '') + lastDelta + '점';
+    pill.className   = 'delta-pill ' + (lastDelta > 0 ? 'pos' : 'neg');
+  }
+  $('scoreBig').textContent = myScore + '점';
   show('revealing');
 });
 
