@@ -457,6 +457,13 @@ const show = id => {
 let myScore = 0, myNick = '', lastDelta = 0, lastCorrect = false, tLimit = 30,
     hasAnswered = false, timerRAF = null, qStartTs = 0;
 
+const bgm = new Audio('/bgm.mp3');
+bgm.loop = true;
+bgm.volume = 0.5;
+
+// 첫 인터랙션에서 오디오 컨텍스트 잠금 해제
+$('joinBtn').addEventListener('click', () => bgm.load(), { once: true });
+
 $('joinBtn').onclick = () => {
   const pin  = $('pinInput').value.trim();
   const nick = $('nickInput').value.trim();
@@ -495,6 +502,8 @@ socket.on('question:show', ({ index, total, q, choices, timeLimit }) => {
     btn.querySelector('.qt').textContent = choices[i] ?? '';
   });
   startTimer(timeLimit);
+  bgm.currentTime = 0;
+  bgm.play().catch(() => {});
   show('answering');
 });
 
@@ -528,6 +537,8 @@ socket.on('player:answered', ({ correct, delta, score }) => {
 });
 
 socket.on('answer:reveal', () => {
+  bgm.pause();
+  bgm.currentTime = 0;
   if (!hasAnswered) {
     $('revEmoji').textContent  = '⏰';
     $('revLabel').textContent  = '시간 초과';
