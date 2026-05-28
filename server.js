@@ -98,6 +98,7 @@ io.on('connection', (socket) => {
     socket.data = { role: 'player', pin, nick };
 
     socket.emit('player:joined', { pin, nick });
+    io.to(pin).emit('lobby:players', publicPlayers(room));
     if (room.hostId) io.to(room.hostId).emit('host:players', publicPlayers(room));
   });
 
@@ -155,6 +156,7 @@ io.on('connection', (socket) => {
       rooms.delete(pin);
     } else if (role === 'player') {
       room.players.delete(socket.id);
+      io.to(pin).emit('lobby:players', publicPlayers(room));
       if (room.hostId) io.to(room.hostId).emit('host:players', publicPlayers(room));
     }
   });

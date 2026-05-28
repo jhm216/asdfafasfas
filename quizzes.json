@@ -1,36 +1,116 @@
 {
   "default": {
-    "title": "상식 퀴즈",
+    "title": "AI 퀴즈",
     "questions": [
       {
-        "q": "대한민국의 수도는?",
-        "choices": ["부산", "서울", "인천", "대구"],
-        "answer": 1,
-        "timeLimit": 5
-      },
-      {
-        "q": "Node.js는 어떤 언어 런타임인가요?",
-        "choices": ["Python", "Java", "JavaScript", "Ruby"],
-        "answer": 2,
-        "timeLimit": 5
-      },
-      {
-        "q": "다음 중 NoSQL DB가 아닌 것은?",
-        "choices": ["MongoDB", "Redis", "PostgreSQL", "DynamoDB"],
-        "answer": 2,
-        "timeLimit": 5
-      },
-      {
-        "q": "WebSocket의 기본 포트는?",
-        "choices": ["80 / 443", "21", "22", "3306"],
+        "q": "GAN은 무엇의 약자인가요?",
+        "choices": [
+          "Generative Adversarial Network",
+          "Global AI Node",
+          "Graph Analysis Network",
+          "General Adaptive Neuralnet"
+        ],
         "answer": 0,
-        "timeLimit": 5
+        "timeLimit": 7
       },
       {
-        "q": "1 + 1 = ?",
-        "choices": ["1", "2", "3", "11"],
+        "q": "ChatGPT는 어떤 AI 모델 계열에 속하나요?",
+        "choices": [
+          "CNN",
+          "Transformer",
+          "RNN",
+          "SVM"
+        ],
         "answer": 1,
-        "timeLimit": 5
+        "timeLimit": 7
+      },
+      {
+        "q": "다음 중 이미지 생성 AI가 아닌 것은?",
+        "choices": [
+          "Stable Diffusion",
+          "Midjourney",
+          "DALL·E",
+          "PostgreSQL"
+        ],
+        "answer": 3,
+        "timeLimit": 7
+      },
+      {
+        "q": "머신러닝에서 데이터를 학습하는 과정을 무엇이라고 하나요?",
+        "choices": [
+          "렌더링",
+          "트레이닝",
+          "크롤링",
+          "압축"
+        ],
+        "answer": 1,
+        "timeLimit": 7
+      },
+      {
+        "q": "AI에서 자연어 처리를 의미하는 약자는?",
+        "choices": [
+          "GPU",
+          "API",
+          "NLP",
+          "OCR"
+        ],
+        "answer": 2,
+        "timeLimit": 7
+      },
+      {
+        "q": "다음 중 프로그래밍 언어가 아닌 것은?",
+        "choices": [
+          "Python",
+          "JavaScript",
+          "TensorFlow",
+          "C++"
+        ],
+        "answer": 2,
+        "timeLimit": 7
+      },
+      {
+        "q": "딥러닝 모델 학습에 주로 사용되는 하드웨어는?",
+        "choices": [
+          "GPU",
+          "DVD",
+          "HDD",
+          "프린터"
+        ],
+        "answer": 0,
+        "timeLimit": 7
+      },
+      {
+        "q": "OpenAI가 개발한 AI 챗봇의 이름은?",
+        "choices": [
+          "Alexa",
+          "ChatGPT",
+          "Siri",
+          "Cortana"
+        ],
+        "answer": 1,
+        "timeLimit": 7
+      },
+      {
+        "q": "AI 모델이 학습에 사용하는 예시 데이터를 무엇이라고 하나요?",
+        "choices": [
+          "학습 데이터",
+          "캐시 데이터",
+          "로그 파일",
+          "패킷 데이터"
+        ],
+        "answer": 0,
+        "timeLimit": 7
+      },
+      {
+        "q": "다음 중 AI 분야와 가장 관련 깊은 것은?",
+        "choices": [
+          "머신러닝",
+          "타자기",
+          "USB 허브",
+          "CD-ROM"
+        ],
+        "answer": 0,
+        "timeLimit": 7
       }
     ]
   }
