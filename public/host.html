@@ -355,46 +355,65 @@ body {
 .rrow:not(.t1):not(.t2):not(.t3) .rscore { font-size:18px; }
 
 /* ════════════════ ENDED ════════════════ */
-#ended { background:#000; }
-
-.win-stage {
-  position: relative;
-  width: 100%;
-  min-height: calc(100vh - 64px);
+#ended {
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: calc(100vh - 64px);
+}
+
+/* 영상 컨테이너 — aspect-ratio는 JS가 영상 로드 후 자동 설정 */
+.win-stage {
+  position: relative;
+  width: 100%;
+  max-height: calc(100vh - 64px);
 }
 .win-video {
   width: 100%;
-  max-height: calc(100vh - 64px);
+  height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: fill;
 }
+/* 오버레이는 영상과 동일한 크기로 덮음 */
 .win-overlay {
   position: absolute;
-
-  /* ↓↓↓ 이름 위치 여기서 조정 ↓↓↓ */
-  bottom: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  /* ↑↑↑ 여기까지 ↑↑↑ */
-
-  text-align: center;
+  inset: 0;
   pointer-events: none;
-  white-space: nowrap;
 }
+
+/* 각 이름은 영상 크기(%) 기준으로 절대 위치 */
 .win-name {
+  position: absolute;
   font-family: 'Outfit', sans-serif;
   font-weight: 900;
   color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,.9), 0 0 40px rgba(0,0,0,.6);
-  line-height: 1.7;
+  text-shadow: 0 2px 14px rgba(0,0,0,.95), 0 0 40px rgba(0,0,0,.7);
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
-.win-name.r1 { font-size: clamp(28px,5vw,60px);  color: #fbbf24; }
-.win-name.r2 { font-size: clamp(22px,3.5vw,44px); color: #e2e8f0; }
-.win-name.r3 { font-size: clamp(18px,2.8vw,36px); color: #fb923c; }
-.win-name.rx { font-size: clamp(14px,2vw,26px);   color: rgba(255,255,255,.75); }
+
+/* ↓↓↓ 1위 위치·크기 조정 ↓↓↓ */
+.win-name.r1 {
+  top: 60%;
+  left: 50%;
+  font-size: 3.6%;   /* % = 영상 너비 기준 → font-size는 vw 단위로 바꿔도 됨 */
+  color: #fbbf24;
+}
+/* ↓↓↓ 2위 위치·크기 조정 ↓↓↓ */
+.win-name.r2 {
+  top: 65%;
+  left: 34%;
+  font-size: 2.8%;
+  color: #e2e8f0;
+}
+/* ↓↓↓ 3위 위치·크기 조정 ↓↓↓ */
+.win-name.r3 {
+  top: 65%;
+  left: 66%;
+  font-size: 2.4%;
+  color: #fb923c;
+}
 
 /* ════════════════ VISIBILITY ════════════════ */
 #setup,#lobby,#countdown,#playing,#answering,#ranking,#ended { display:none; }
@@ -472,7 +491,7 @@ body {
 
   <!-- ENDED -->
   <div id="ended">
-    <div class="win-stage">
+    <div class="win-stage" id="winStage">
       <video id="winVideo" class="win-video" src="/win.mp4" playsinline></video>
       <div class="win-overlay" id="winOverlay"></div>
     </div>
@@ -567,13 +586,24 @@ socket.on('ranking:show', ({ leaderboard, isLast }) => {
 });
 
 socket.on('game:ended', ({ leaderboard }) => {
-  const rankCls = ['r1','r2','r3'];
-  const medals  = ['🥇','🥈','🥉'];
-  $('winOverlay').innerHTML = leaderboard.map((p, i) =>
-    `<div class="win-name ${rankCls[i] || 'rx'}">${medals[i] || `${i+1}위`} ${esc(p.nick)}</div>`
-  ).join('');
+  const top3 = leaderboard.slice(0, 3);
+  $('winOverlay').innerHTML = [
+    top3[0] ? `<div class="win-name r1">${esc(top3[0].nick)}</div>` : '',
+    top3[1] ? `<div class="win-name r2">${esc(top3[1].nick)}</div>` : '',
+    top3[2] ? `<div class="win-name r3">${esc(top3[2].nick)}</div>` : '',
+  ].join('');
 
   const vid = $('winVideo');
+
+  // 영상 비율을 컨테이너에 맞게 설정 → 오버레이 % 위치가 영상 기준이 됨
+  const applyAspect = () => {
+    if (vid.videoWidth && vid.videoHeight) {
+      $('winStage').style.aspectRatio = `${vid.videoWidth} / ${vid.videoHeight}`;
+    }
+  };
+  if (vid.readyState >= 1) applyAspect();
+  else vid.addEventListener('loadedmetadata', applyAspect, { once: true });
+
   vid.currentTime = 0;
   vid.play().catch(() => {});
 
