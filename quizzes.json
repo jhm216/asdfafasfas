@@ -1,116 +1,259 @@
 {
   "default": {
-    "title": "AI 퀴즈",
+    "title": "AI디지털전환 퀴즈",
     "questions": [
       {
-        "q": "GAN은 무엇의 약자인가요?",
+        "q": "인공지능(AI)이라는 용어가 처음 탄생한 회의는?",
         "choices": [
-          "Generative Adversarial Network",
-          "Global AI Node",
-          "Graph Analysis Network",
-          "General Adaptive Neuralnet"
-        ],
-        "answer": 0,
-        "timeLimit": 7
-      },
-      {
-        "q": "ChatGPT는 어떤 AI 모델 계열에 속하나요?",
-        "choices": [
-          "CNN",
-          "Transformer",
-          "RNN",
-          "SVM"
+          "1950년 튜링 회의",
+          "1956년 다트머스 회의",
+          "1966년 ELIZA 발표회",
+          "1980년 전문가 시스템 학회"
         ],
         "answer": 1,
-        "timeLimit": 7
+        "timeLimit": 15
       },
       {
-        "q": "다음 중 이미지 생성 AI가 아닌 것은?",
+        "q": "인공지능(AI)이라는 용어가 처음 탄생한 회의는?",
         "choices": [
-          "Stable Diffusion",
-          "Midjourney",
-          "DALL·E",
-          "PostgreSQL"
+          "1950년 튜링 회의",
+          "1956년 다트머스 회의",
+          "1966년 ELIZA 발표회",
+          "1980년 전문가 시스템 학회"
+        ],
+        "answer": 1,
+        "timeLimit": 15
+      },
+      {
+        "q": "지금 수강하고 있는 강의의 교수님 성함은?",
+        "choices": [
+          "방시혁",
+          "방재환",
+          "방제환",
+          "방지환"
+        ],
+        "answer": 2,
+        "timeLimit": 5
+      },
+      {
+        "q": "1950년 앨런 튜링이 '기계가 생각할 수 있는가'를 판단하기 위해 제안한 것은?",
+        "choices": [
+          "다트머스 회의",
+          "튜링 테스트",
+          "ELIZA",
+          "전문가 시스템"
+        ],
+        "answer": 1,
+        "timeLimit": 10
+      },
+      {
+        "q": "디지털 전환 3단계 중 '아날로그 정보를 디지털 형태로 변환'하는 첫 단계는? (예: 종이 문서 → PDF, LP → MP3)",
+        "choices": [
+          "Digitization",
+          "Digitalization",
+          "Digital Transformation",
+          "Digital Marketing"
+        ],
+        "answer": 0,
+        "timeLimit": 10
+      },
+      {
+        "q": "2026년 현재 가장 인기 있는 음악 생성 AI로 소개된 도구는?",
+        "choices": [
+          "Udio",
+          "Suno AI",
+          "MusicGen",
+          "AIVA"
+        ],
+        "answer": 1,
+        "timeLimit": 10
+      },
+      {
+        "q": "텍스트 설명만으로 이미지를 생성하는 AI의 핵심 기술은? (노이즈에서 점점 선명한 이미지로 발전)",
+        "choices": [
+          "n-gram 모델",
+          "결정 트리",
+          "Diffusion Model(확산 모델)",
+          "서포트 벡터 머신"
+        ],
+        "answer": 2,
+        "timeLimit": 12
+      },
+      {
+        "q": "신경망의 기본 3층 구조 순서로 올바른 것은?",
+        "choices": [
+          "출력층 → 은닉층 → 입력층",
+          "은닉층 → 입력층 → 출력층",
+          "입력층 → 출력층 → 은닉층",
+          "입력층 → 은닉층 → 출력층"
         ],
         "answer": 3,
-        "timeLimit": 7
+        "timeLimit": 12
       },
       {
-        "q": "머신러닝에서 데이터를 학습하는 과정을 무엇이라고 하나요?",
+        "q": "'위조지폐범과 경찰이 경쟁하며 실력을 키운다'에 비유되며 딥페이크의 기반이 된 신경망은?",
         "choices": [
-          "렌더링",
-          "트레이닝",
-          "크롤링",
-          "압축"
+          "CNN",
+          "GAN",
+          "RNN",
+          "LSTM"
         ],
         "answer": 1,
-        "timeLimit": 7
+        "timeLimit": 15
       },
       {
-        "q": "AI에서 자연어 처리를 의미하는 약자는?",
+        "q": "'돋보기로 사진을 훑어 특징을 찾는 두뇌'에 비유되는, 이미지 처리 특화 신경망은?",
         "choices": [
-          "GPU",
-          "API",
-          "NLP",
-          "OCR"
+          "GAN",
+          "Transformer",
+          "CNN",
+          "n-gram"
         ],
         "answer": 2,
-        "timeLimit": 7
+        "timeLimit": 15
       },
       {
-        "q": "다음 중 프로그래밍 언어가 아닌 것은?",
+        "q": "Adobe Stock 이미지로만 학습해 '상업적 사용 100% 안전'으로 소개된 이미지 생성 AI는?",
         "choices": [
-          "Python",
-          "JavaScript",
-          "TensorFlow",
-          "C++"
+          "Midjourney",
+          "Stable Diffusion",
+          "Adobe Firefly",
+          "Bing Image Creator"
         ],
         "answer": 2,
-        "timeLimit": 7
+        "timeLimit": 15
       },
       {
-        "q": "딥러닝 모델 학습에 주로 사용되는 하드웨어는?",
+        "q": "이 퀴즈를 만든 조는 몇 조일까요?",
         "choices": [
-          "GPU",
-          "DVD",
-          "HDD",
-          "프린터"
+          "6조",
+          "7조",
+          "8조",
+          "9조"
         ],
-        "answer": 0,
-        "timeLimit": 7
+        "answer": 2,
+        "timeLimit": 3
       },
       {
-        "q": "OpenAI가 개발한 AI 챗봇의 이름은?",
+        "q": "2017년 논문 'Attention Is All You Need'가 제안한, 현대 LLM 대부분의 기반이 된 구조는?",
         "choices": [
-          "Alexa",
-          "ChatGPT",
-          "Siri",
-          "Cortana"
+          "RNN",
+          "CNN",
+          "Transformer",
+          "GAN"
+        ],
+        "answer": 2,
+        "timeLimit": 15
+      },
+      {
+        "q": "2016년 3월, 이세돌 9단을 4:1로 이긴 구글 딥마인드의 AI는?",
+        "choices": [
+          "Deep Blue",
+          "AlphaGo",
+          "Watson",
+          "AlexNet"
         ],
         "answer": 1,
-        "timeLimit": 7
+        "timeLimit": 15
       },
       {
-        "q": "AI 모델이 학습에 사용하는 예시 데이터를 무엇이라고 하나요?",
+        "q": "ChatGPT 성공의 핵심 비결로, '인간의 피드백을 통한 강화학습'을 뜻하는 약자는?",
         "choices": [
-          "학습 데이터",
-          "캐시 데이터",
-          "로그 파일",
-          "패킷 데이터"
+          "RAG",
+          "RLHF",
+          "BPE",
+          "MoE"
         ],
-        "answer": 0,
-        "timeLimit": 7
+        "answer": 1,
+        "timeLimit": 15
       },
       {
-        "q": "다음 중 AI 분야와 가장 관련 깊은 것은?",
+        "q": "Google NotebookLM의 가장 큰 특징은?",
         "choices": [
-          "머신러닝",
-          "타자기",
-          "USB 허브",
-          "CD-ROM"
+          "실시간 웹 검색으로 최신 정보를 제공한다",
+          "업로드한 소스만을 기반으로 답변해 환각을 최소화한다",
+          "이미지를 영상으로 변환한다",
+          "프롬프트로 슬라이드를 자동 생성한다"
+        ],
+        "answer": 1,
+        "timeLimit": 18
+      },
+      {
+        "q": "RAG(Retrieval-Augmented Generation)에 대한 설명으로 옳은 것은?",
+        "choices": [
+          "모델의 파라미터 수를 늘리는 기술",
+          "토큰을 숫자 벡터로 변환하는 기술",
+          "외부 데이터베이스에서 정보를 검색해 응답함으로써 환각을 줄이는 기술",
+          "이미지를 영상으로 변환하는 기술"
+        ],
+        "answer": 2,
+        "timeLimit": 18
+      },
+      {
+        "q": "임베딩(Embedding)의 '의미의 수학적 계산' 예시로 올바른 것은?",
+        "choices": [
+          "왕 + 남자 = 여왕",
+          "왕 × 여자 = 여왕",
+          "왕 - 남자 + 여자 = 여왕",
+          "왕 ÷ 남자 = 여왕"
+        ],
+        "answer": 2,
+        "timeLimit": 20
+      },
+      {
+        "q": "[12주차] 영상 생성 AI에서 'Diffusion Model을 시간 축으로 확장'할 때 가장 핵심이 되는 기술적 과제는?",
+        "choices": [
+          "프레임 간 일관성(시간적 일관성) 유지",
+          "음성 합성의 정확도",
+          "토큰 수 절감",
+          "항상 4K 해상도 고정"
         ],
         "answer": 0,
-        "timeLimit": 7
+        "timeLimit": 15
+      },
+      {
+        "q": "[12주차] 2022년 9월 Meta가 발표한, 최초의 고품질 Text-to-Video 모델은?",
+        "choices": [
+          "Runway Gen-2",
+          "Pika Labs 1.0",
+          "OpenAI Sora",
+          "Make-A-Video"
+        ],
+        "answer": 3,
+        "timeLimit": 10
+      },
+      {
+        "q": "[12주차] 영상 생성 AI의 프롬프트 기본 공식으로 올바른 것은?",
+        "choices": [
+          "[주제] + [카메라 움직임] + [조명/분위기] + [스타일] + [품질]",
+          "[주제] + [스타일] + [조명] + [앵글] + [디테일]",
+          "[장르] + [분위기] + [주제] + [보컬 스타일]",
+          "[목표] + [입력/출력] + [제약] + [검증]"
+        ],
+        "answer": 0,
+        "timeLimit": 20
+      },
+      {
+        "q": "[12주차] 퍼셉트론(Perceptron)에 대한 설명으로 옳은 것은?",
+        "choices": [
+          "2017년 구글이 발표한 자연어 처리 모델이다",
+          "1943년 McCulloch-Pitts 뉴런을 바탕으로 1958년 Rosenblatt이 구현한 이진 분류기이다",
+          "정답 없이 데이터를 군집화하는 비지도학습 알고리즘이다",
+          "노이즈에서 이미지를 복원하는 생성 모델이다"
+        ],
+        "answer": 1,
+        "timeLimit": 20
+      },
+      {
+        "q": "[12주차] 퍼셉트론으로 합격 여부를 판단한다. 수학 점수 60점, 가중치 0.2, 바이어스 -20, 계단 함수(기준값 0)일 때 선형 결합 값과 출력은?",
+        "choices": [
+          "결합값 12, 출력 1 (합격)",
+          "결합값 -8, 출력 0 (불합격)",
+          "결합값 -8, 출력 1 (합격)",
+          "결합값 8, 출력 0 (불합격)"
+        ],
+        "answer": 1,
+        "timeLimit": 20
       }
     ]
   }
