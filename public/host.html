@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>QuizN — 호스트</title>
+<title>AI디지털전환 퀴즈대회— 호스트</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="/socket.io/socket.io.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -126,6 +126,40 @@ body {
   line-height:1.7;
 }
 .pin-hint strong { color:var(--dim); }
+
+.pin-site-link {
+  display:inline-block;
+  margin:18px 0 10px;
+  font-size:clamp(22px,3.5vw,34px);
+  font-weight:900;
+  letter-spacing:.01em;
+  background:linear-gradient(120deg,#a78bfa,#38bdf8);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-decoration:none;
+  filter:drop-shadow(0 0 18px rgba(167,139,250,.45));
+}
+.pin-qr-wrap {
+  margin:14px auto 6px;
+  width:200px;
+  height:200px;
+  background:#fff;
+  border-radius:16px;
+  padding:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 0 40px rgba(167,139,250,.3);
+}
+.pin-qr-wrap canvas,
+.pin-qr-wrap img { width:100%;height:100%; }
+.pin-qr-label {
+  font-size:12px;
+  color:var(--mute);
+  margin-top:8px;
+  letter-spacing:.05em;
+}
 
 .right-col { display:flex;flex-direction:column;gap:20px; }
 
@@ -422,6 +456,7 @@ body {
 #countdown.active,#answering.active { display:flex; }
 #playing.active,#ranking.active,#ended.active { display:block; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -430,9 +465,9 @@ body {
   <div id="setup" class="active">
     <div class="setup-logo">
       <div class="setup-icon">🎯</div>
-      <div class="setup-name">QuizN</div>
+      <div class="setup-name">퀴즈대회</div>
     </div>
-    <p class="setup-sub">실시간 퀴즈 플랫폼</p>
+    <p class="setup-sub">AI디지털전환 - 8조</p>
     <button class="setup-btn" id="createBtn">새 게임 만들기</button>
   </div>
 
@@ -442,9 +477,11 @@ body {
       <div class="pin-eyebrow">게임 PIN</div>
       <div class="pin-num" id="pinDisplay">------</div>
       <div class="pin-hint">
-        <strong>game.hansei.cam</strong> 접속 후<br>
-        위 PIN을 입력하세요
+        아래 주소로 접속 후 PIN을 입력하세요
       </div>
+      <a class="pin-site-link" href="https://game.hansei.cam" target="_blank">game.hansei.cam</a>
+      <div class="pin-qr-wrap" id="qrWrap"></div>
+      <div class="pin-qr-label">카메라로 QR 스캔</div>
     </div>
     <div class="right-col">
       <div class="players-card">
@@ -518,6 +555,17 @@ $('createBtn').onclick = async () => {
 socket.on('host:joined', ({ pin, players }) => {
   $('pinDisplay').textContent = pin;
   renderPlayers(players);
+  // QR 코드 생성
+  const qrWrap = $('qrWrap');
+  qrWrap.innerHTML = '';
+  new QRCode(qrWrap, {
+    text: 'https://game.hansei.cam',
+    width: 180,
+    height: 180,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
   show('lobby');
 });
 
