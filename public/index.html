@@ -332,6 +332,20 @@ body {
 .fin-score    { text-align:center;font-size:58px;font-weight:900;letter-spacing:-2px;padding:12px 0; }
 .fin-rank     { font-size:14px;color:var(--dim);text-align:center;font-weight:600;margin-bottom:20px; }
 
+/* ── Video overlay ── */
+#videoOverlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:200;
+  background:#000;
+}
+#videoOverlay video {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
 /* ── Visibility ── */
 #join,#waiting,#countdown,#answering,#answered,#revealing,#ranking,#finished { display:none; }
 #join.active,#waiting.active,#answering.active,#answered.active,#revealing.active,#ranking.active,#finished.active { display:block; }
@@ -444,6 +458,11 @@ body {
     </div>
   </div>
 
+  <!-- VIDEO OVERLAY -->
+  <div id="videoOverlay">
+    <video id="endVideo" src="https://qvwydchboqeihufoquebl.sgp1.cdn.digitaloceanspaces.com/win.mp4" playsinline webkit-playsinline></video>
+  </div>
+
 </div>
 <script>
 const socket = io();
@@ -457,7 +476,7 @@ const show = id => {
 let myScore = 0, myNick = '', lastDelta = 0, lastCorrect = false, tLimit = 30,
     hasAnswered = false, timerRAF = null, qStartTs = 0;
 
-const bgm = new Audio('/bgm.mp3');
+const bgm = new Audio('https://qvwydchboqeihufoquebl.sgp1.cdn.digitaloceanspaces.com/bgm.mp3');
 bgm.loop = true;
 bgm.volume = 0.5;
 
@@ -568,6 +587,14 @@ socket.on('game:ended', ({ leaderboard }) => {
   $('finalRankMsg').textContent = idx >= 0 ? `${idx+1}위 / ${leaderboard.length}명` : '';
   renderRank('finalRank', leaderboard);
   show('finished');
+
+  const overlay = $('videoOverlay');
+  const vid = $('endVideo');
+  overlay.style.display = 'block';
+  vid.currentTime = 0;
+  vid.play().catch(() => {});
+  vid.onended = () => { overlay.style.display = 'none'; };
+  overlay.onclick = () => { vid.pause(); overlay.style.display = 'none'; };
 });
 
 function renderRank(id, board) {
